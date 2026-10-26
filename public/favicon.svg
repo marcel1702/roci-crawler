@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0b1020"/>
+  <g fill="#8fa3c7">
+    <circle cx="86" cy="96" r="3"/><circle cx="430" cy="70" r="2.5"/><circle cx="450" cy="400" r="3"/>
+    <circle cx="70" cy="420" r="2.5"/><circle cx="200" cy="52" r="2"/><circle cx="330" cy="470" r="2"/>
+  </g>
+  <!-- Das Ringtor -->
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#f59e0b" stroke-width="26"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#fde68a" stroke-width="6" stroke-dasharray="4 38" stroke-linecap="round"/>
+  <!-- Die Rocinante (stark vereinfacht) -->
+  <path d="M120 256 L215 226 L330 226 L392 256 L330 286 L215 286 Z" fill="#dbe4f5"/>
+  <path d="M215 226 L330 226 L392 256 L330 240 L215 240 Z" fill="#ffffff" opacity=".55"/>
+  <rect x="150" y="248" width="150" height="16" fill="#3b4b73"/>
+  <circle cx="352" cy="256" r="9" fill="#38bdf8"/>
+  <path d="M120 256 L84 238 L84 274 Z" fill="#ef4444"/>
+</svg>

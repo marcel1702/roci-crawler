@@ -1,0 +1,18 @@
+/** Zentrale Platzhalter-Farben (0xRRGGBB). Echte Grafik ersetzt später die erzeugten Texturen, nicht diese Struktur. */
+export const COLORS = {
+  background: 0x0b1020,
+  floor: 0x1b2540,
+  floorLine: 0x222e4f,
+  wall: 0x56637f,
+  wallLight: 0x7a88a6,
+  wallDark: 0x38425a,
+  hpFill: 0xe5484d,
+  hpBack: 0x1a1020,
+  hpFrame: 0x000000,
+  ui: 0xdbe4f5,
+  uiDim: 0x7d8aa8,
+  uiPanel: 0x121a30,
+  accent: 0xf59e0b,
+  damage: '#ffe08a',
+  damageTaken: '#ff8a8a',
+} as const;
