@@ -151,9 +151,21 @@ export const KNOCKBACK = {
   enemyRecoil: 24,
 } as const;
 
+/** Wucherung des Protomoleküls (Akt 2): Boden und Sporenzonen schaden über Zeit und bremsen. */
+export const INFECTION = {
+  /** Abstand der Schadenstakte (ms). */
+  tickMs: 500,
+  /** Anteil der maximalen Lebenspunkte pro Takt auf infiziertem Boden. */
+  tilePct: 0.025,
+  /** Faktor auf das Lauftempo darauf. */
+  tileSlow: 0.7,
+} as const;
+
+/** Optik einer Welt: Schlüssel der Kachel-Textur je Akt-Welt (siehe `graphics/placeholderTextures`). */
+export type Tileset = 'ceres' | 'eros';
+export const TILESET_KEYS: Record<Tileset, string> = { ceres: 'tiles', eros: 'tiles-eros' };
+
 export const ZEROG = {
-  /** Wahrscheinlichkeit, dass ein Kampf- oder Schatzraum im Dungeon schwerelos ist (Akt 1: einzelne kleine Bereiche). */
-  roomChance: 0.18,
   /** Dauer der Bremswirkung von „Stabilisieren“ (ms). */
   brakeMs: 900,
   /** Abklingzeit von „Stabilisieren“ (ms). */

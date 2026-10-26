@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { LOCATIONS_PER_ACT } from './story';
 
 export type Difficulty = 'normal' | 'hard';
 
@@ -11,12 +12,12 @@ export const DIFFICULTY_RULES: Record<Difficulty, { hp: number; damage: number; 
 /** Ein Auftrag der Missionskonsole: Ort, Schwierigkeit und der Seed des Dungeons. */
 export interface Contract {
   seed: number;
-  /** Index in der Liste der Ortsnamen (`contract.location.<n>`). */
+  /** Index in der Liste der Orte des Akts (`act.<akt>.location.<n>`). */
   location: number;
   difficulty: Difficulty;
 }
 
-export const LOCATION_COUNT = 6;
+export const LOCATION_COUNT = LOCATIONS_PER_ACT;
 
 /** Drei Aufträge: zwei normale und ein schwerer, mit verschiedenen Orten. Gleicher Rng-Zustand = gleiche Aufträge. */
 export function generateContracts(rng: Rng): Contract[] {
@@ -27,6 +28,11 @@ export function generateContracts(rng: Rng): Contract[] {
     location: locations[i] as number,
     difficulty,
   }));
+}
+
+/** Salz für die Aufträge von Akt `act` (Akt 1 behält das bisherige, damit gespeicherte Spiele dieselben Aufträge sehen). */
+export function contractSalt(act: number): number {
+  return 1 + (act - 1) * 16;
 }
 
 /** Seed für Aufträge und Händlerangebot: ändert sich mit jeder abgeschlossenen Mission, bleibt sonst stabil. */

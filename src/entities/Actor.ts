@@ -36,6 +36,8 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   lifesteal = 0;
   /** Faktor auf das Lauftempo (z. B. 0.5 mit versiegelter Rüstung). */
   speedMultiplier = 1;
+  /** Faktor auf das Lauftempo durch Bremswirkung (Wucherung, Sporen); fällt nach kurzer Zeit auf 1 zurück. */
+  slowFactor = 1;
   /** Faktor auf verursachten Schaden (z. B. durch Inspirieren). */
   damageMultiplier = 1;
   /** Grundangriff: Nahkampf oder Geschoss. */
@@ -58,6 +60,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
 
   private dead = false;
   private stunMs = 0;
+  private slowMs = 0;
   private stuckSeconds = 0;
   private floating = false;
   private thrust: Vec2 | null = null;
@@ -161,6 +164,18 @@ export abstract class Actor extends Phaser.GameObjects.Container {
     return healed;
   }
 
+  /** Bremst für `durationMs` auf `factor` des Tempos (die stärkere Bremse gilt). */
+  slow(factor: number, durationMs: number): void {
+    if (this.dead) return;
+    this.slowFactor = this.slowMs > 0 ? Math.min(this.slowFactor, factor) : factor;
+    this.slowMs = Math.max(this.slowMs, durationMs);
+  }
+
+  /** Lauftempo in px/s mit allen Faktoren (Verstärkungen und Bremswirkung). */
+  get moveSpeed(): number {
+    return this.stats.moveSpeed * this.speedMultiplier * this.slowFactor;
+  }
+
   stun(durationMs: number): void {
     if (this.dead) return;
     this.stunMs = Math.max(this.stunMs, durationMs);
@@ -177,6 +192,10 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   protected tickTimers(dt: number): void {
     this.attackCooldown.update(dt * 1000);
     if (this.stunMs > 0) this.stunMs = Math.max(0, this.stunMs - dt * 1000);
+    if (this.slowMs > 0) {
+      this.slowMs -= dt * 1000;
+      if (this.slowMs <= 0) this.slowFactor = 1;
+    }
     this.tickFloat(dt);
   }
 
@@ -201,7 +220,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
     const thrust = this.thrust;
     this.thrust = null;
     const brake = this.braking || (this.brakeDamping > 0 && thrust === null && !this.isStunned);
-    const params = { ...paramsFor(this.stats.moveSpeed * this.speedMultiplier), brakeDamping: this.braking ? DEFAULT_ZEROG.brakeDamping : this.brakeDamping };
+    const params = { ...paramsFor(this.moveSpeed), brakeDamping: this.braking ? DEFAULT_ZEROG.brakeDamping : this.brakeDamping };
     const body = { x: this.x, y: this.y, vx: this.vx, vy: this.vy, radius: this.radius };
     const speedBefore = Math.hypot(body.vx, body.vy);
     const { bumped } = stepZeroG(grid, body, dt, thrust, params, this.zeroGControl, brake);
@@ -221,7 +240,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
     if (this.directThrust) {
       this.thrust = { x: dirX, y: dirY };
     } else {
-      this.thrust = matchedThrust(this, dirX, dirY, this.stats.moveSpeed * this.speedMultiplier);
+      this.thrust = matchedThrust(this, dirX, dirY, this.moveSpeed);
     }
   }
 
@@ -250,7 +269,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
       this.stuckSeconds = 0;
       return;
     }
-    const { dx, dy } = this.follower.step(this.x, this.y, this.stats.moveSpeed * this.speedMultiplier, dt);
+    const { dx, dy } = this.follower.step(this.x, this.y, this.moveSpeed, dt);
     const wanted = Math.hypot(dx, dy);
     if (wanted === 0) {
       this.follower.commit();

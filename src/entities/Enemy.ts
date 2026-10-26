@@ -24,14 +24,17 @@ const NOTICE_THROUGH_WALLS = 70;
 const BOSS_HOLD_DISTANCE = 24;
 /** Prallt ein Sturmangriff gegen eine Wand, dauert die Benommenheit so viel länger. */
 const WALL_DIZZY_FACTOR = 1.5;
+/** Schaden pro Takt einer Sporenzone im Verhältnis zu einem normalen Treffer des Gegners. */
+const SPORE_DAMAGE_FACTOR = 0.35;
+const SPORE_SLOW = 0.7;
 
 type EnemyState = 'idle' | 'chase' | 'windup' | 'charge';
 type MeleeLike = Extract<EnemyAttack, { kind: 'melee' | 'slam' }>;
-type RangedLike = Extract<EnemyAttack, { kind: 'ranged' | 'fan' | 'bomb' }>;
+type RangedLike = Extract<EnemyAttack, { kind: 'ranged' | 'fan' | 'bomb' | 'spore' }>;
 
 /** Fernkämpfer halten Abstand (weichen zurück) und brauchen Sichtlinie. */
 function isRangedLike(attack: EnemyAttack): attack is RangedLike {
-  return attack.kind === 'ranged' || attack.kind === 'fan' || attack.kind === 'bomb';
+  return attack.kind === 'ranged' || attack.kind === 'fan' || attack.kind === 'bomb' || attack.kind === 'spore';
 }
 
 export interface Difficulty {
@@ -57,6 +60,8 @@ export class Enemy extends Actor {
   private windupAim = 0;
   private aimLength = 0;
   private bombTarget = { x: 0, y: 0 };
+  private sporeTargets: { x: number; y: number }[] = [];
+  private rainTimerMs = 0;
   private bombSprite: Phaser.GameObjects.Image | null = null;
   private chargeLeft = 0;
   private chargeHit = false;
@@ -164,7 +169,7 @@ export class Enemy extends Actor {
       return;
     }
 
-    this.tickSummons(dt);
+    this.tickSummons(dt, player);
     const attack = this.def.attack;
     if (this.def.pattern || attack.kind === 'charge') this.tickPattern(dt, player, dist);
     else if (isRangedLike(attack)) this.tickRanged(dt, player, dist, attack);
@@ -203,7 +208,7 @@ export class Enemy extends Actor {
         this.faceToward(player.x, player.y);
         return;
       }
-      const wanted = this.stats.moveSpeed * this.speedMultiplier * dt;
+      const wanted = this.moveSpeed * dt;
       const moved = this.moveBy(((this.x - player.x) / dist) * wanted, ((this.y - player.y) / dist) * wanted);
       if (moved > wanted * RETREAT_MIN_PROGRESS) {
         this.follower.clear();
@@ -256,6 +261,7 @@ export class Enemy extends Actor {
       case 'fan':
         return sight && dist >= attack.minRange && edgeDistance(this, player) <= this.stats.attackRange * 0.9;
       case 'bomb':
+      case 'spore':
         return sight && dist >= attack.minRange && edgeDistance(this, player) <= this.stats.attackRange;
       case 'charge':
         return sight && dist >= attack.minRange && dist <= attack.distance + this.radius + player.radius;
@@ -297,6 +303,16 @@ export class Enemy extends Actor {
           .setTint(0xff8a3d)
           .setDepth(42);
         this.scene.tweens.add({ targets: this.bombSprite, x: player.x, y: player.y, duration: attack.windupMs, ease: 'Quad.easeOut' });
+        break;
+      }
+      case 'spore': {
+        // Der erste Klumpen zielt auf den Spieler, die übrigen streuen um ihn (festgelegt zu Beginn).
+        this.sporeTargets = [{ x: player.x, y: player.y }];
+        for (let i = 1; i < attack.count; i++) {
+          const angle = this.world.rng.next() * Math.PI * 2;
+          const distance = (0.4 + this.world.rng.next() * 0.6) * attack.scatter;
+          this.sporeTargets.push({ x: player.x + Math.cos(angle) * distance, y: player.y + Math.sin(angle) * distance });
+        }
         break;
       }
       default:
@@ -354,6 +370,20 @@ export class Enemy extends Actor {
         this.scene.cameras.main.shake(100, 0.005);
         break;
       }
+      case 'spore':
+        audio.play('boom');
+        for (const target of this.sporeTargets) {
+          this.world.hazards.spawn({
+            x: target.x,
+            y: target.y,
+            radius: attack.radius,
+            durationMs: attack.zoneMs,
+            damage: Math.max(1, Math.round(this.world.combat.rollDamage(this) * SPORE_DAMAGE_FACTOR)),
+            slow: SPORE_SLOW,
+          });
+        }
+        this.sporeTargets = [];
+        break;
       case 'charge':
         this.aiState = 'charge';
         this.chargeLeft = this.aimLength > 0 ? this.aimLength : attack.distance;
@@ -381,7 +411,7 @@ export class Enemy extends Actor {
       this.aiState = 'chase';
       return;
     }
-    const step = Math.min(this.chargeLeft, attack.speed * this.speedMultiplier * dt);
+    const step = Math.min(this.chargeLeft, attack.speed * this.speedMultiplier * this.slowFactor * dt);
     const moved = this.moveBy(Math.cos(this.windupAim) * step, Math.sin(this.windupAim) * step);
     this.chargeLeft -= step;
 
@@ -407,6 +437,7 @@ export class Enemy extends Actor {
     this.aiState = 'chase';
     this.telegraph.clear();
     this.clearBomb();
+    this.sporeTargets = [];
     if (this.attackCooldown.ready) this.attackCooldown.trigger(AFTER_STUN_COOLDOWN_MS);
   }
 
@@ -459,6 +490,14 @@ export class Enemy extends Actor {
         g.fillStyle(COLORS.telegraph, fill).fillCircle(tx, ty, attack.radius * progress);
         break;
       }
+      case 'spore':
+        for (const target of this.sporeTargets) {
+          const tx = target.x - this.x;
+          const ty = target.y - this.y;
+          g.lineStyle(2, COLORS.telegraph, line).strokeCircle(tx, ty, attack.radius);
+          g.fillStyle(COLORS.telegraph, fill).fillCircle(tx, ty, attack.radius * progress);
+        }
+        break;
       case 'charge': {
         // Band in Laufrichtung, so breit wie der Körper.
         const dx = Math.cos(this.windupAim);
@@ -488,14 +527,16 @@ export class Enemy extends Actor {
     this.enraged = true;
     this.speedMultiplier *= phase.speedFactor;
     this.summonTimerMs = 1500;
+    this.rainTimerMs = phase.rain?.everyMs ?? 0;
     this.world.combat.ring(this.x, this.y, 70, COLORS.telegraph, 450);
     this.scene.events.emit(MISSION_EVENTS.bossEnraged, this);
   }
 
-  /** Ruft in der zweiten Phase in Abständen Verstärkung herbei (bis zur Obergrenze). */
-  private tickSummons(dt: number): void {
+  /** Zweite Phase: Wucherungsregen in der Nähe des Spielers und Verstärkung in Abständen (bis zur Obergrenze). */
+  private tickSummons(dt: number, player: Player): void {
     const phase = this.def.enrage;
     if (!phase || !this.enraged) return;
+    this.tickRain(dt, player);
     this.summonTimerMs -= dt * 1000;
     if (this.summonTimerMs > 0) return;
     this.summonTimerMs = phase.summonEveryMs;
@@ -520,6 +561,29 @@ export class Enemy extends Actor {
     }
   }
 
+  private tickRain(dt: number, player: Player): void {
+    const rain = this.def.enrage?.rain;
+    if (!rain) return;
+    this.rainTimerMs -= dt * 1000;
+    if (this.rainTimerMs > 0) return;
+    this.rainTimerMs = rain.everyMs;
+    const angle = this.world.rng.next() * Math.PI * 2;
+    const distance = this.world.rng.next() * rain.spread;
+    const { grid } = this.world;
+    const x = player.x + Math.cos(angle) * distance;
+    const y = player.y + Math.sin(angle) * distance;
+    if (grid.isSolid(grid.toCol(x), grid.toRow(y))) return;
+    this.world.hazards.spawn({
+      x,
+      y,
+      radius: rain.radius,
+      warnMs: rain.warnMs,
+      durationMs: rain.zoneMs,
+      damage: Math.max(1, Math.round(this.world.combat.rollDamage(this) * SPORE_DAMAGE_FACTOR)),
+      slow: SPORE_SLOW,
+    });
+  }
+
   protected override onDamaged(): void {
     // Wer getroffen wird, bemerkt den Spieler auch außerhalb der Aggro-Reichweite.
     this.engage();
@@ -534,6 +598,17 @@ export class Enemy extends Actor {
 
   protected override onDeath(): void {
     this.setTargeted(false);
+    const zone = this.def.deathZone;
+    if (zone) {
+      this.world.hazards.spawn({
+        x: this.x,
+        y: this.y,
+        radius: zone.radius,
+        durationMs: zone.zoneMs,
+        damage: Math.max(1, Math.round(this.world.combat.rollDamage(this) * SPORE_DAMAGE_FACTOR)),
+        slow: SPORE_SLOW,
+      });
+    }
     this.hpBar.setVisible(false);
     this.telegraph.clear();
     this.clearBomb();

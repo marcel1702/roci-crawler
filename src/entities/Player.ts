@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { audio } from '../audio';
 import { ABILITIES } from '../abilities';
 import type { AbilityDef } from '../abilities';
-import { GAME_EVENTS, POTION, TAP, TEXTURE_SCALE, ZEROG, actorTextureKey } from '../config/constants';
+import { GAME_EVENTS, INFECTION, POTION, TAP, TEXTURE_SCALE, ZEROG, actorTextureKey } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { hasLineOfSight } from '../core/collision';
 import { edgeDistance, isInReach } from '../core/combat';
@@ -83,6 +83,7 @@ export class Player extends Actor {
 
   private repathTimer = 0;
   private brakeMs = 0;
+  private infectionMs = 0;
   private zeroGAnnounced = false;
   private dash: DashState | null = null;
   private ghostTimer = 0;
@@ -267,6 +268,7 @@ export class Player extends Actor {
     this.brakeCooldown.update(dt * 1000);
     this.brakeMs = Math.max(0, this.brakeMs - dt * 1000);
     this.braking = this.brakeMs > 0;
+    this.tickInfection(dt);
     for (const slot of this.abilities) slot.cooldown.update(dt * 1000);
     this.tickBuffs(dt);
 
@@ -324,6 +326,20 @@ export class Player extends Actor {
     } else if (dash.remaining <= 0.01 || moved < step * 0.5) {
       this.endDash(dash);
     }
+  }
+
+  /** Auf infiziertem Boden: bremst und schadet in regelmäßigen Takten (Anteil der Lebenspunkte). */
+  private tickInfection(dt: number): void {
+    const { grid } = this.world;
+    if (!grid.isInfected(grid.toCol(this.x), grid.toRow(this.y))) {
+      this.infectionMs = 0;
+      return;
+    }
+    this.slow(INFECTION.tileSlow, 250);
+    this.infectionMs -= dt * 1000;
+    if (this.infectionMs > 0) return;
+    this.infectionMs = INFECTION.tickMs;
+    this.world.combat.dealDamage(null, this, Math.max(1, Math.round(this.stats.maxHp * INFECTION.tilePct)), false, true);
   }
 
   /** Nach dem Sturmangriff bleibt in der Schwerelosigkeit ein Teil des Schwungs. */

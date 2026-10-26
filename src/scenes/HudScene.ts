@@ -402,7 +402,7 @@ export class HudScene extends Phaser.Scene {
 
   private onMissionCompleted(stats: MissionStats): void {
     this.locked = true;
-    this.overlayTitle.setText(t(stats.bossDefeated ? 'hud.result.titleAct' : 'hud.result.title')).setColor(stats.bossDefeated ? '#ffd34d' : '#8dffb0');
+    this.overlayTitle.setText(stats.bossDefeated ? t('hud.result.titleAct', { act: stats.act }) : t('hud.result.title')).setColor(stats.bossDefeated ? '#ffd34d' : '#8dffb0');
     this.overlayLabels.setText(
       [
         t('hud.result.time'),

@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { audio } from '../audio';
+import { IMPLEMENTED_ACTS } from '../core/story';
 import {
   GAME_EVENTS,
   MAX_FRAME_SECONDS,
   REGISTRY_PROFILE,
   REGISTRY_SESSION,
   SCENE_KEYS,
-  TEXTURE_KEYS,
+  TILESET_KEYS,
   TEXTURE_RES,
   TEXTURE_SCALE,
   TILE_SIZE,
@@ -31,6 +32,7 @@ import { t } from '../i18n';
 import type { TextKey } from '../i18n';
 import type { Session } from '../persistence/session';
 import { CombatSystem } from '../systems/CombatSystem';
+import { HazardSystem } from '../systems/HazardSystem';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { ResponsiveCamera } from '../systems/ResponsiveCamera';
 import { TapControlSystem } from '../systems/TapControlSystem';
@@ -57,6 +59,7 @@ export class HubScene extends Phaser.Scene implements WorldContext {
   rng!: Rng;
   combat!: CombatSystem;
   projectiles!: ProjectileSystem;
+  hazards!: HazardSystem;
   player!: Player;
   readonly enemies: readonly Enemy[] = [];
 
@@ -86,6 +89,7 @@ export class HubScene extends Phaser.Scene implements WorldContext {
     this.combat = new CombatSystem(this, this.rng);
     this.projectiles = new ProjectileSystem(this, this, () => []);
     this.combat.projectiles = this.projectiles;
+    this.hazards = new HazardSystem(this, this.combat, () => []);
     this.stations = [];
     this.crew = [];
     this.pending = null;
@@ -204,9 +208,10 @@ export class HubScene extends Phaser.Scene implements WorldContext {
   }
 
   private say(member: CrewMember): void {
-    // Nach Akt 1 kommt ein zusätzlicher Spruch zur Lage dazu und zuerst dran.
+    // Nach dem ersten geschafften Akt kommt ein zusätzlicher Spruch zur Lage dazu (der des letzten Akts) und zuerst dran.
     const keys = [`crew.${member.id}.1`, `crew.${member.id}.2`] as TextKey[];
-    if (this.player.profile.actsCleared >= 1) keys.unshift(`crew.${member.id}.act1` as TextKey);
+    const cleared = Math.min(this.player.profile.actsCleared, IMPLEMENTED_ACTS);
+    if (cleared >= 1) keys.unshift(`crew.${member.id}.act${cleared}` as TextKey);
     const key = keys[member.lineIndex % keys.length] as TextKey;
     member.lineIndex++;
     this.speech?.destroy();
@@ -234,7 +239,7 @@ export class HubScene extends Phaser.Scene implements WorldContext {
     const tileSizeInTexture = TILE_SIZE * TEXTURE_RES;
     const data = this.grid.toRowsOfIds().map((line, row) => line.map((id, col) => (id === 1 && !this.grid.isWallEdge(col, row) ? -1 : id)));
     const map = this.make.tilemap({ data, tileWidth: tileSizeInTexture, tileHeight: tileSizeInTexture });
-    const tileset = map.addTilesetImage('tiles', TEXTURE_KEYS.tiles);
+    const tileset = map.addTilesetImage('tiles', TILESET_KEYS.ceres);
     if (!tileset) throw new Error('Tileset konnte nicht erzeugt werden');
     const layer = map.createLayer(0, tileset, 0, 0);
     if (!layer) throw new Error('Tilemap-Ebene konnte nicht erzeugt werden');

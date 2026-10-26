@@ -64,13 +64,17 @@ export class Profile {
     this.onChange?.();
   }
 
-  /** Verbucht eine abgeschlossene Mission; ein besiegter Akt-Boss schließt den Akt ab (höchstens bis `actCount`). */
-  completeMission(bossDefeated: boolean, actCount: number): void {
+  /**
+   * Verbucht eine abgeschlossene Mission in Akt `act`. Nur Missionen im laufenden Akt (dem nächsten nach dem letzten
+   * geschafften) zählen für den Fortschritt; ein besiegter Boss schließt den Akt ab. Frühere Akte lassen sich beliebig wiederholen.
+   */
+  completeMission(act: number, bossDefeated: boolean): void {
     this.missionsCompleted++;
-    if (bossDefeated && this.actsCleared < actCount) {
+    if (act !== this.actsCleared + 1) return;
+    if (bossDefeated) {
       this.actsCleared++;
       this.actMissions = 0;
-    } else if (!bossDefeated) {
+    } else {
       this.actMissions++;
     }
   }

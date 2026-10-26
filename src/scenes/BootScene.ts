@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { REGISTRY_PROFILE, REGISTRY_SESSION, SCENE_KEYS } from '../config/constants';
 import { createPlaceholderTextures } from '../graphics/placeholderTextures';
+import { actDef } from '../data/acts';
 import { CLASS_LIST } from '../data/classes';
 import type { Session } from '../persistence/session';
 import { SLOT_COUNT } from '../persistence/session';
@@ -11,7 +12,7 @@ import type { DungeonMission, MissionConfig } from './MissionScene';
  *
  * Abkürzungen zum Ausprobieren (überspringen die Titelseite):
  * - `?seed=123` startet genau diesen Dungeon (`&zerog=1`: jeder Kampfraum schwerelos, `&zerog=0`: keiner),
- *   `&boss` stellt den Gangboss in den Ausgangsraum, `?mode=arena` die Testarena (beides mit Spielstand 1),
+ *   `&act=2` wählt den Akt, `&boss` stellt dessen Boss in den Ausgangsraum, `?mode=arena` die Testarena (beides mit Spielstand 1),
  * - `?slot=2` lädt Spielstand 2 (oder beginnt dort mit Amos) und geht in den Hub,
  * - `?reset` beginnt in Spielstand 1 neu,
  * - `?class=naomi` (amos, naomi, bobbie, holden) wählt die Figur, wenn dabei ein neuer Spielstand entsteht.
@@ -50,6 +51,8 @@ function missionFromParams(params: URLSearchParams): MissionConfig | null {
   const zeroG = Number.parseFloat(params.get('zerog') ?? '');
   const mission: DungeonMission = { kind: 'dungeon', seed };
   if (Number.isFinite(zeroG)) mission.zeroG = zeroG;
-  if (params.has('boss')) mission.boss = 'gangboss';
+  const act = Number.parseInt(params.get('act') ?? '', 10);
+  if (Number.isFinite(act) && act >= 1) mission.act = act;
+  if (params.has('boss')) mission.boss = actDef(mission.act ?? 1).boss;
   return mission;
 }

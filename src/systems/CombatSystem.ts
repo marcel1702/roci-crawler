@@ -95,14 +95,17 @@ export class CombatSystem {
     return Math.round(rollDamage(attacker.stats, this.rng) * multiplier * attacker.damageMultiplier);
   }
 
-  /** Wendet Schaden an, zeigt die Zahl und meldet einen Todesfall. Liefert den tatsächlichen Schaden. */
-  dealDamage(source: Actor | null, target: Actor, amount: number, crit = false): number {
+  /**
+   * Wendet Schaden an, zeigt die Zahl und meldet einen Todesfall. Liefert den tatsächlichen Schaden.
+   * `quiet`: ohne Erschütterung und Ton (Schaden über Zeit durch Zonen und Wucherung).
+   */
+  dealDamage(source: Actor | null, target: Actor, amount: number, crit = false, quiet = false): number {
     if (target.isDead) return 0;
     const dealt = target.takeDamage(amount);
-    audio.play(target.team === 'player' ? 'hurt' : 'hit');
+    if (!quiet) audio.play(target.team === 'player' ? 'hurt' : 'hit');
     const color = target.team === 'player' ? COLORS.damageTaken : crit ? COLORS.crit : COLORS.damage;
     this.floatText(target.x, target.y - target.radius - 6, crit ? `${dealt}!` : String(dealt), color, crit ? 17 : 13);
-    if (target.team === 'player') this.scene.cameras.main.shake(90, 0.004);
+    if (target.team === 'player' && !quiet) this.scene.cameras.main.shake(90, 0.004);
 
     if (source && !source.isDead && source.lifesteal > 0 && target.team !== source.team) {
       const healed = source.heal(dealt * source.lifesteal);

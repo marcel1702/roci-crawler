@@ -1,47 +1,63 @@
 import { describe, expect, it } from 'vitest';
-import { IMPLEMENTED_ACTS, MISSIONS_PER_ACT, mainMission } from '../../src/core/story';
+import { IMPLEMENTED_ACTS, MISSIONS_PER_ACT, highestUnlockedAct, mainMission } from '../../src/core/story';
 import { Profile, parseProfile } from '../../src/core/profile';
 import { ITEM_RULES } from '../../src/data/items';
 
 describe('Hauptauftrag (Akt-Fortschritt)', () => {
   it('ist gesperrt, bis genug Missionen im Akt geschafft sind', () => {
     for (let done = 0; done < MISSIONS_PER_ACT; done++) {
-      const main = mainMission(0, done);
-      expect(main).toMatchObject({ act: 1, status: 'locked', remaining: MISSIONS_PER_ACT - done, allCleared: false });
+      expect(mainMission(1, 0, done)).toMatchObject({ act: 1, status: 'locked', remaining: MISSIONS_PER_ACT - done, allCleared: false });
     }
-    expect(mainMission(0, MISSIONS_PER_ACT)).toMatchObject({ status: 'ready', remaining: 0 });
-    expect(mainMission(0, MISSIONS_PER_ACT + 5).status).toBe('ready');
+    expect(mainMission(1, 0, MISSIONS_PER_ACT)).toMatchObject({ status: 'ready', remaining: 0 });
+    expect(mainMission(1, 0, MISSIONS_PER_ACT + 5).status).toBe('ready');
   });
 
-  it('nach dem Akt kann der Boss erneut herausgefordert werden, und alle vorhandenen Akte gelten als geschafft', () => {
-    const main = mainMission(IMPLEMENTED_ACTS, 0);
-    expect(main).toMatchObject({ act: IMPLEMENTED_ACTS, status: 'repeat', remaining: 0, allCleared: true });
-    // Mehr abgeschlossene Akte als vorhanden ändern nichts.
-    expect(mainMission(IMPLEMENTED_ACTS + 2, 0).act).toBe(IMPLEMENTED_ACTS);
+  it('geschaffte Akte lassen sich wiederholen, der nächste ist gesperrt, bis die Missionen geschafft sind', () => {
+    expect(mainMission(1, 1, 0)).toMatchObject({ act: 1, status: 'repeat', remaining: 0, allCleared: false });
+    expect(mainMission(2, 1, 1)).toMatchObject({ act: 2, status: 'locked', remaining: MISSIONS_PER_ACT - 1 });
+    expect(mainMission(2, 1, MISSIONS_PER_ACT).status).toBe('ready');
+  });
+
+  it('nicht freigeschaltete Akte werden auf den höchsten spielbaren begrenzt; nach dem letzten gelten alle als geschafft', () => {
+    expect(mainMission(2, 0, 0).act).toBe(1);
+    expect(mainMission(99, IMPLEMENTED_ACTS, 0)).toMatchObject({ act: IMPLEMENTED_ACTS, status: 'repeat', allCleared: true });
+    expect(highestUnlockedAct(0)).toBe(1);
+    expect(highestUnlockedAct(1)).toBe(Math.min(2, IMPLEMENTED_ACTS));
+    expect(highestUnlockedAct(IMPLEMENTED_ACTS + 3)).toBe(IMPLEMENTED_ACTS);
   });
 });
 
 describe('Profil: Missionen und Akte', () => {
-  it('normale Missionen zählen im Akt, der Boss schließt den Akt ab und setzt den Zähler zurück', () => {
+  it('Missionen im laufenden Akt zählen, der Boss schließt den Akt ab und setzt den Zähler zurück', () => {
     const profile = new Profile(ITEM_RULES);
-    for (let i = 0; i < MISSIONS_PER_ACT; i++) profile.completeMission(false, IMPLEMENTED_ACTS);
+    for (let i = 0; i < MISSIONS_PER_ACT; i++) profile.completeMission(1, false);
     expect(profile).toMatchObject({ missionsCompleted: MISSIONS_PER_ACT, actMissions: MISSIONS_PER_ACT, actsCleared: 0 });
 
-    profile.completeMission(true, IMPLEMENTED_ACTS);
+    profile.completeMission(1, true);
     expect(profile).toMatchObject({ missionsCompleted: MISSIONS_PER_ACT + 1, actMissions: 0, actsCleared: 1 });
+
+    profile.completeMission(2, false);
+    expect(profile).toMatchObject({ actMissions: 1, actsCleared: 1 });
   });
 
-  it('der Boss ein weiteres Mal zählt für die Gesamtzahl, schließt aber keinen Akt mehr ab', () => {
+  it('frühere Akte zählen nur für die Gesamtzahl; ein Boss ein weiteres Mal schließt nichts ab', () => {
     const profile = new Profile(ITEM_RULES);
-    profile.completeMission(true, IMPLEMENTED_ACTS);
-    profile.completeMission(true, IMPLEMENTED_ACTS);
-    expect(profile).toMatchObject({ missionsCompleted: 2, actsCleared: IMPLEMENTED_ACTS, actMissions: 0 });
+    profile.completeMission(1, true);
+    profile.completeMission(1, true);
+    profile.completeMission(1, false);
+    expect(profile).toMatchObject({ missionsCompleted: 3, actsCleared: 1, actMissions: 0 });
+  });
+
+  it('ein späterer Akt kann nicht vor dem früheren abgeschlossen werden', () => {
+    const profile = new Profile(ITEM_RULES);
+    profile.completeMission(2, true);
+    expect(profile).toMatchObject({ missionsCompleted: 1, actsCleared: 0, actMissions: 0 });
   });
 
   it('Fortschritt übersteht Speichern und Laden; ältere Spielstände starten bei null', () => {
     const profile = new Profile(ITEM_RULES);
-    profile.completeMission(false, IMPLEMENTED_ACTS);
-    profile.completeMission(false, IMPLEMENTED_ACTS);
+    profile.completeMission(1, false);
+    profile.completeMission(1, false);
     const loaded = parseProfile(JSON.parse(JSON.stringify(profile)), ITEM_RULES).profile;
     expect(loaded).toMatchObject({ missionsCompleted: 2, actMissions: 2, actsCleared: 0 });
 

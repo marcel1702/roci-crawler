@@ -6,11 +6,19 @@ import { createRng } from '../../src/core/rng';
 import { ENEMIES } from '../../src/data/enemies';
 import type { EnemyId } from '../../src/data/enemies';
 import { DROP_CHANCE, RARITY_WEIGHTS } from '../../src/data/loot';
+import { ACTS, actText } from '../../src/data/acts';
 import { ACT1_SPAWNS } from '../../src/data/spawnTables';
 import type { EnemyAttack, EnemyDef } from '../../src/data/types';
 import { de } from '../../src/i18n/de';
 
 const defs = Object.values(ENEMIES) as EnemyDef[];
+const def = (id: string): EnemyDef => ENEMIES[id as EnemyId] as EnemyDef;
+
+function usedEnemies(table: typeof ACT1_SPAWNS): Set<string> {
+  const used = new Set<string>([...table.guardian, ...table.treasureGuard]);
+  for (const group of table.groups) for (const id of group.enemies) used.add(id);
+  return used;
+}
 
 function checkAttack(attack: EnemyAttack, label: string): void {
   expect(attack.windupMs, `${label}: Ankündigung`).toBeGreaterThanOrEqual(250);
@@ -24,6 +32,11 @@ function checkAttack(attack: EnemyAttack, label: string): void {
       break;
     case 'bomb':
       expect(attack.radius, label).toBeGreaterThan(0);
+      break;
+    case 'spore':
+      expect(attack.radius, label).toBeGreaterThan(0);
+      expect(attack.zoneMs, label).toBeGreaterThan(attack.windupMs);
+      expect(attack.count, label).toBeGreaterThanOrEqual(1);
       break;
     case 'charge':
       expect(attack.distance, label).toBeGreaterThan(attack.minRange);
@@ -52,19 +65,37 @@ describe('Gegnerdaten', () => {
     }
   });
 
-  it('Akt 1 hat vier Gegnertypen plus Elite und Boss', () => {
-    const regular = defs.filter((d) => !d.elite && !d.boss).map((d) => d.id).sort();
-    expect(regular).toEqual(['drone', 'gunner', 'saboteur', 'thug']);
-    expect(defs.filter((d) => d.elite && !d.boss).map((d) => d.id)).toEqual(['brute']);
-    expect(defs.filter((d) => d.boss).map((d) => d.id)).toEqual(['gangboss']);
+  it('jeder Akt hat vier reguläre Gegnertypen, einen Elite und einen Boss', () => {
+    const byAct: Record<number, { regular: string[]; elite: string[]; boss: string[] }> = {
+      1: { regular: ['drone', 'gunner', 'saboteur', 'thug'], elite: ['brute'], boss: ['gangboss'] },
+      2: { regular: ['crawler', 'infected', 'spore'], elite: ['host'], boss: ['knot'] },
+    };
+    for (const act of ACTS) {
+      const expected = byAct[act.id];
+      if (!expected) continue;
+      const used = usedEnemies(act.spawns);
+      expect([...used].filter((id) => !def(id).elite).sort(), `Akt ${act.id}`).toEqual(expected.regular);
+      expect([...used].filter((id) => def(id).elite), `Akt ${act.id}`).toEqual(expected.elite);
+      expect(act.boss).toBe(expected.boss[0]);
+      expect(used.has(act.boss)).toBe(false);
+    }
+    expect(defs.filter((d) => d.boss).map((d) => d.id).sort()).toEqual(['gangboss', 'knot']);
   });
 
-  it('die Spawn-Tabelle von Akt 1 nutzt nur vorhandene Gegner, jeden regulären mindestens einmal', () => {
-    const used = new Set<string>([...ACT1_SPAWNS.guardian, ...ACT1_SPAWNS.treasureGuard]);
-    for (const group of ACT1_SPAWNS.groups) for (const id of group.enemies) used.add(id);
-    for (const id of used) expect(ENEMIES[id as EnemyId], id).toBeDefined();
-    for (const id of ['thug', 'gunner', 'saboteur', 'drone', 'brute']) expect(used.has(id), id).toBe(true);
-    expect(used.has('gangboss')).toBe(false);
+  it('die Spawn-Tabellen nutzen nur vorhandene Gegner, und nur Akt 2 hat Sporenträger', () => {
+    for (const act of ACTS) for (const id of usedEnemies(act.spawns)) expect(ENEMIES[id as EnemyId], id).toBeDefined();
+    expect(usedEnemies(ACT1_SPAWNS).has('spore')).toBe(false);
+  });
+
+  it('Verstärkung der Bosse und Wucherungszonen sind gültig', () => {
+    for (const def of defs) {
+      if (def.enrage?.rain) {
+        expect(def.enrage.rain.warnMs).toBeGreaterThanOrEqual(600);
+        expect(def.enrage.rain.zoneMs).toBeGreaterThan(def.enrage.rain.warnMs);
+      }
+      if (def.deathZone) expect(def.deathZone.zoneMs).toBeGreaterThan(0);
+    }
+    expect(ENEMIES.spore.deathZone).toBeDefined();
   });
 });
 
@@ -96,6 +127,25 @@ describe('Gangboss', () => {
 });
 
 describe('Bossmission im Dungeon', () => {
+  it('jeder Akt-Boss hat Texte und einen lösbaren festen Dungeon mit großem Bossraum', () => {
+    for (const act of ACTS) {
+      const boss = def(act.boss);
+      expect(boss.boss, act.boss).toBeDefined();
+      const dungeon = generateDungeon(act.bossSeed, 32, {
+        zeroGChance: act.zeroGChance,
+        infectionChance: act.infectionChance,
+        bossRoomZeroG: act.bossRoomZeroG,
+      });
+      const plan = planMission(dungeon, act.spawns, createRng(act.bossSeed ^ 0x9e3779b9), { boss: act.boss });
+      const room = dungeon.rooms.find((r) => r.id === plan.exitRoomId)!;
+      expect(findPath(dungeon.grid, plan.playerStart, plan.exit, 11), `Akt ${act.id}`).not.toBeNull();
+      expect(room.zeroG, `Akt ${act.id}`).toBe(act.bossRoomZeroG);
+      expect(room.infected).toBe(false);
+      expect(Math.min(room.w, room.h) * 32).toBeGreaterThanOrEqual(boss.stats.radius * 2 + 120);
+      expect(de[actText(act.id, 'boss.briefing')]).toBeTruthy();
+    }
+  });
+
   it('der Boss steht allein in der Mitte des Ausgangsraums, statt der Wächter', () => {
     for (let seed = 0; seed < 60; seed++) {
       const dungeon = generateDungeon(seed, 32);

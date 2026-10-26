@@ -1,6 +1,7 @@
 import type { TileGrid } from '../core/grid';
 import type { Rng } from '../core/rng';
 import type { CombatSystem } from '../systems/CombatSystem';
+import type { HazardSystem } from '../systems/HazardSystem';
 import type { ProjectileSystem } from '../systems/ProjectileSystem';
 import type { AllyDef } from '../data/types';
 import type { Ally, AllyOverrides } from './Ally';
@@ -13,6 +14,7 @@ export interface WorldContext {
   readonly rng: Rng;
   readonly combat: CombatSystem;
   readonly projectiles: ProjectileSystem;
+  readonly hazards: HazardSystem;
   /** Lebende und frisch besiegte Gegner der Mission. */
   readonly enemies: readonly Enemy[];
   /** Ruft einen Verbündeten herbei (ersetzt einen gleichen). Null, wo es keine Kämpfe gibt (Hub). */

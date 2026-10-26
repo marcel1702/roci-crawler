@@ -87,16 +87,16 @@ Support im Einzelspiel: Holdens Besonderheit sind **Crew-Rufe** (Fähigkeiten, d
 | Akt | Schauplatz | Gegner | Boss | Mechanik |
 |---|---|---|---|---|
 | **1** | Ceres / Tycho | Straßenschläger, Gang-Schützen, OPA-Saboteure, Sicherheitsdrohnen | Gangboss (Arbeitsname) | Einführung, einzelne kleine Schwerelosigkeits-Räume |
-| **2** | Eros | Protomolekül-Mutanten: Infizierte, Kriecher, Sporenträger | Verschmolzener Knoten (Arbeitsname) | Viele Schwerelosigkeits-Sektionen, Infektions-Flächen |
+| **2** `[Umgesetzt, Meilenstein 9]` | Eros | Protomolekül-Mutanten: Infizierte, Kriecher, Sporenträger (Elite: Wirt) | Der Verschmolzene Knoten (Arbeitsname) | Viele Schwerelosigkeits-Räume (40 %), Infektions-Flächen (35 %), Bossraum schwerelos |
 | **3** | Ganymed / Ringtore | Hybrid-Soldaten, Wachdrohnen | Hybrid-Kommandant (Arbeitsname) | Mischung aus allem, Finale am Ringtor |
 
 Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in Dialogen auf. Umfang: je Akt ca. 4 Missionen + Boss, 60–75 Minuten.
 
-### Ablauf von Akt 1 `[Umgesetzt, Meilenstein 8]`
+### Ablauf eines Akts `[Umgesetzt, Meilenstein 8 und 9]`
 
-- **Aufträge** (Normal/Schwer, Ort Ceres oder Tycho) sind frei wählbar; jeder abgeschlossene zählt für den **Akt-Fortschritt**. Jeder Ort hat einen **Funkspruch** zu Missionsbeginn (Briefing, auch auf den Hinweis zu neuen Gegnern: Saboteure, Drohnen, Schwerelosigkeit).
+- **Aufträge** (Normal/Schwer, sechs Orte je Akt) sind frei wählbar; jeder abgeschlossene zählt für den **Akt-Fortschritt**. Jeder Ort hat einen **Funkspruch** zu Missionsbeginn (Briefing, auch auf den Hinweis zu neuen Gegnern: Saboteure, Drohnen, Schwerelosigkeit).
 - Nach **3 Missionen** schaltet sich der **Hauptauftrag** „Ceres: Eisenzahns Dock“ frei (unter den Karten der Missionskonsole): ein Dungeon mit festem Seed, der Boss steht allein im Ausgangsraum, die Luftschleuse öffnet sich erst nach seinem Tod.
-- **Akt 1 abgeschlossen:** Ergebnisbildschirm „Akt 1 abgeschlossen“, die Besatzung kommentiert die Lage im Hub, die Karte zeigt „Akt 2 folgt in einer späteren Version“. Der Boss lässt sich erneut herausfordern (dann Schwer, ohne Auswirkung auf den Fortschritt), normale Aufträge laufen weiter.
+- **Akt abgeschlossen:** Ergebnisbildschirm „Akt N abgeschlossen“, die Besatzung kommentiert die Lage im Hub (je Akt ein Spruch, der des zuletzt geschafften zuerst), der **nächste Akt wird freigeschaltet** (Reiter „Akt 1 / Akt 2“ oben in der Missionskonsole, jeder Akt hat eigene Aufträge, Orte, Briefings und Boss). Frühere Akte und Bosse lassen sich wiederholen (Boss dann Schwer, ohne Auswirkung auf den Fortschritt); nur Missionen im **laufenden** Akt zählen für dessen Boss-Freischaltung. Nach dem letzten vorhandenen Akt steht „Weitere Akte folgen in einer späteren Version“.
 - Texte (Briefings, Boss-Sprüche, Crew-Sprüche) sind Platzhalter und noch nicht inhaltlich abgestimmt (Frage 4).
 - Schwierigkeitskurve: Gegner wachsen mit deiner Stufe (+6 % Leben, +4 % Schaden je Stufe); ein vollständig geräumter Auftrag bringt im Mittel ca. 430 EP (Simulation über 40 Seeds: 307–628), nach drei Aufträgen ist man etwa Stufe 7–8, und der Boss wächst mit dieser Stufe mit. Das Tempo des Aufstiegs ist hoch und wird in Meilenstein 11 abgestimmt.
 
@@ -122,6 +122,21 @@ Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in D
 
 **Zweite Phase** unter 50 % Leben: ruft alle 9 s Verstärkung (Schläger, Schläger, Saboteur; höchstens 3 gleichzeitig, **ohne Erfahrung und Beute**), greift 25 % öfter an und läuft 20 % schneller. Sprüche beim ersten Sehen, beim Wechsel der Phase und beim Besiegen. Die Lebensleiste mit Namen steht oben in der Mitte, solange er kämpft. **Beute:** zwei sichere Gegenstände (selten bis legendär, nie gewöhnlich/ungewöhnlich) und 220 Credits (× Schwierigkeit), 400 EP.
 
+### Akt 2: Eros `[Umgesetzt, Meilenstein 9]`
+
+Alle Zahlen sind Startwerte; Kachelsatz grünlich (Eros), Empfehlung ab Stufe 7.
+
+| Gegner | Rolle | Angriff und Ankündigung | Besonderheit |
+|---|---|---|---|
+| **Infizierter** | Schwarm-Nahkämpfer | Schlag, 0,28 s (roter Kegel) | 60 LP, kommt in Dreiergruppen |
+| **Kriecher** | flinker Springer | **Sprung** auf dich zu, 0,45 s Ankündigung (rotes Band, 130 px), danach 0,7 s benommen | 30 LP, schnell |
+| **Sporenträger** | Zonenleger aus der Ferne | schleudert Sporen auf deinen Standort, 0,85 s (roter Kreis); jeder Klumpen lässt eine **Wucherungszone** (52 px, 6 s) zurück | hält Abstand, platzt beim Tod zu einer Zone (4 s), 55 LP |
+| **Wirt** (Elite) | Zäher Brocken | Flächenschlag (0,75 s, 70 px) und Sporen um dich herum (2 Zonen), abwechselnd | 260 LP, goldener Rand, 90 EP |
+
+**Wucherungszonen** und **infizierter Boden** (grüne Flecken in 35 % der Kampf-/Schatzräume ohne Schwerkraft, Raummitte bleibt frei): bremsen auf 70 % Tempo und schaden alle 0,5 s (Boden: 2,5 % der maximalen Leben; Zonen: 35 % eines Treffers der Quelle). Zonen werden vorher durch einen roten Kreis angekündigt, nie aus dem Nichts. Gegner sind immun.
+
+**Der Verschmolzene Knoten** (Arbeitsname): 820 Leben, Radius 25, sehr langsam, wartet im **schwerelosen** Bossraum. Reihum: **Sporenwurf** (3 Zonen um dich, 1 s Ankündigung), **Bodenschlag** (104 px, 0,95 s) und **Fächer** (7 langsame Geschosse). **Zweite Phase** unter 50 %: alle 3,2 s eine angekündigte Zone in deiner Nähe (Wucherungsregen), alle 8 s Verstärkung (Kriecher, Kriecher, Infizierter; höchstens 4, ohne EP/Beute), 25 % öfter Angriffe, 20 % schneller. Beute und Credits wie beim Gangboss, 450 EP.
+
 Gegner bemerken den Spieler ab einer Aggro-Reichweite oder wenn sie getroffen werden und geben bei großer Entfernung auf.
 
 ## 7. Dungeons `[Vorgabe: zufallsgeneriert]`
@@ -132,6 +147,7 @@ Umgesetzt in Meilenstein 3 `[Umgesetzt]`, alle Zahlen sind Startwerte:
 - **Räume:** *Start* (gegnerfrei), *Ausgang* (am weitesten vom Start, bewacht), *Schatz* (Sackgasse mit Truhe und zwei Bewachern, höchstens zwei), *Kampf* (Gegnergruppe nach Tiefe, große Räume bekommen einen Gegner mehr, 25 % haben eine Truhe).
 - **Aufgabe der Mission:** Luftschleuse finden → ihre **Wächter** (Brecher + 2 Schützen) besiegen → Schleuse betreten. Dann Ergebnisbildschirm und nächste Mission.
 - **Nebel des Krieges:** Sichtweite 8 Kacheln, Wände blockieren die Sicht, Entdecktes bleibt abgedunkelt sichtbar; **Minikarte** oben rechts mit Spielfigur, Truhen und Schleuse (nach Entdeckung).
+- **Pro Akt** (`data/acts.ts`): Spawn-Tabelle, Boss samt festem Boss-Seed, Anteile schwereloser und infizierter Räume, Kachelsatz, Grundstufe. Schwerelos oder infiziert wird ein Raum erst nach der Kartenerzeugung gewürfelt (die Karte bleibt je Seed gleich); ein Raum ist nie beides, Start- und Ausgangsraum nie (der Bossraum kann auf Wunsch des Akts schwerelos sein).
 - **Truhen:** öffnen sich beim Herangehen, geben 40–90 Credits und mit 30 % einen zusätzlichen Trank (höchstens 5). Items als Beute folgen mit Meilenstein 4.
 - **Credits** sind die Währung (Händler im Hub, Meilenstein 5).
 - Gegner bemerken den Spieler nur mit Sichtlinie (durch Wände erst aus ca. 70 px).

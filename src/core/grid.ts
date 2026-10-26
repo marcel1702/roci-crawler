@@ -1,6 +1,13 @@
 import type { Vec2 } from './math';
 
-export const TILE = { floor: 0, wall: 1, /** Begehbarer Boden ohne Schwerkraft. */ zeroG: 2 } as const;
+export const TILE = {
+  floor: 0,
+  wall: 1,
+  /** Begehbarer Boden ohne Schwerkraft. */
+  zeroG: 2,
+  /** Begehbarer Boden mit Protomolekül-Wucherung (schadet und bremst). */
+  infected: 3,
+} as const;
 export type TileId = (typeof TILE)[keyof typeof TILE];
 
 /** Kachelraster der Spielwelt. Alles außerhalb des Rasters zählt als Wand. */
@@ -43,6 +50,23 @@ export class TileGrid {
   /** True auf Kacheln, auf denen es keine Schwerkraft gibt. */
   isZeroG(col: number, row: number): boolean {
     return this.get(col, row) === TILE.zeroG;
+  }
+
+  /** True auf Kacheln mit Wucherung. */
+  isInfected(col: number, row: number): boolean {
+    return this.get(col, row) === TILE.infected;
+  }
+
+  /** Markiert normale Bodenkacheln, deren Mittelpunkt höchstens `radius` Kacheln von (cx, cy) entfernt ist, als infiziert. */
+  markInfected(cx: number, cy: number, radius: number, skip?: (col: number, row: number) => boolean): void {
+    const r = Math.ceil(radius);
+    for (let row = Math.floor(cy) - r; row <= Math.floor(cy) + r; row++) {
+      for (let col = Math.floor(cx) - r; col <= Math.floor(cx) + r; col++) {
+        if (!this.inBounds(col, row) || this.get(col, row) !== TILE.floor) continue;
+        if (Math.hypot(col - cx, row - cy) > radius || skip?.(col, row)) continue;
+        this.cells[row * this.cols + col] = TILE.infected;
+      }
+    }
   }
 
   /** Markiert ein Rechteck begehbarer Kacheln als schwerelos. */

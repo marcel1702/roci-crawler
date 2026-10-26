@@ -17,8 +17,10 @@ export interface Room {
   links: number[];
   /** Anzahl Räume vom Startraum (0 = Startraum). */
   depth: number;
-  /** Raum ohne Schwerkraft (nie Start- oder Ausgangsraum). */
+  /** Raum ohne Schwerkraft (nie Start- oder Ausgangsraum, außer bei `bossRoomZeroG`). */
   zeroG: boolean;
+  /** Raum mit Wucherungen auf dem Boden (nur Kampf- und Schatzräume ohne Schwerkraft). */
+  infected: boolean;
 }
 
 export interface Dungeon {
@@ -38,6 +40,10 @@ export interface DungeonOptions {
   corridorWidth: number;
   /** Wahrscheinlichkeit, dass ein Kampf- oder Schatzraum schwerelos ist. */
   zeroGChance: number;
+  /** Wahrscheinlichkeit, dass ein Kampf- oder Schatzraum (ohne Schwerkraft) infiziert ist. */
+  infectionChance: number;
+  /** Der Ausgangsraum (Bossraum) ist schwerelos. */
+  bossRoomZeroG: boolean;
 }
 
 export const DEFAULT_DUNGEON: DungeonOptions = {
@@ -49,6 +55,8 @@ export const DEFAULT_DUNGEON: DungeonOptions = {
   maxRoomSize: 11,
   corridorWidth: 2,
   zeroGChance: 0,
+  infectionChance: 0,
+  bossRoomZeroG: false,
 };
 
 const ROOM_PADDING = 3;
@@ -94,9 +102,32 @@ export function generateDungeon(seed: number, tileSize: number, options: Partial
       room.zeroG = (room.role === 'combat' || room.role === 'treasure') && rng.chance(opts.zeroGChance);
       if (room.zeroG) grid.markZeroG(room.x, room.y, room.w, room.h);
     }
+    for (const room of rooms) {
+      room.infected = !room.zeroG && (room.role === 'combat' || room.role === 'treasure') && rng.chance(opts.infectionChance);
+      if (room.infected) growInfection(grid, room, rng);
+    }
+    if (opts.bossRoomZeroG) {
+      const exit = rooms.find((r) => r.role === 'exit');
+      if (exit) {
+        exit.zeroG = true;
+        grid.markZeroG(exit.x, exit.y, exit.w, exit.h);
+      }
+    }
     return { seed, grid, rooms };
   }
   throw new Error(`Kein gültiger Dungeon für Seed ${seed} gefunden`);
+}
+
+/** Zwei bis drei Wucherungen im Raum; die Mitte (Truhe, Kampfplatz) bleibt frei. */
+function growInfection(grid: TileGrid, room: Room, rng: Rng): void {
+  const center = roomCenterTile(room);
+  const nearCenter = (col: number, row: number): boolean => Math.abs(col - center.col) <= 1 && Math.abs(row - center.row) <= 1;
+  const patches = rng.int(2, 3);
+  for (let i = 0; i < patches; i++) {
+    const cx = room.x + rng.int(1, Math.max(1, room.w - 2));
+    const cy = room.y + rng.int(1, Math.max(1, room.h - 2));
+    grid.markInfected(cx, cy, 1.2 + rng.next() * 1.4, nearCenter);
+  }
 }
 
 function placeRooms(rng: Rng, opts: DungeonOptions): Room[] {
@@ -112,7 +143,7 @@ function placeRooms(rng: Rng, opts: DungeonOptions): Room[] {
       (r) =>
         x < r.x + r.w + ROOM_PADDING && x + w + ROOM_PADDING > r.x && y < r.y + r.h + ROOM_PADDING && y + h + ROOM_PADDING > r.y,
     );
-    if (!overlaps) rooms.push({ id: rooms.length, x, y, w, h, role: 'combat', links: [], depth: 0, zeroG: false });
+    if (!overlaps) rooms.push({ id: rooms.length, x, y, w, h, role: 'combat', links: [], depth: 0, zeroG: false, infected: false });
   }
   return rooms;
 }

@@ -10,11 +10,10 @@ import {
   LOOT,
   REGISTRY_PROFILE,
   SCENE_KEYS,
-  TEXTURE_KEYS,
+  TILESET_KEYS,
   TEXTURE_RES,
   TEXTURE_SCALE,
   TILE_SIZE,
-  ZEROG,
 } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { DIFFICULTY_RULES } from '../core/contracts';
@@ -24,7 +23,6 @@ import { planMission } from '../core/encounters';
 import type { TileGrid } from '../core/grid';
 import { parseLevel } from '../core/level';
 import { rollItem } from '../core/items';
-import { IMPLEMENTED_ACTS } from '../core/story';
 import type { Vec2 } from '../core/math';
 import { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
@@ -36,7 +34,8 @@ import type { EnemyId } from '../data/enemies';
 import { ITEM_RULES } from '../data/items';
 import { TEST_ARENA, TEST_ARENA_WAVES } from '../data/levels/testArena';
 import { DROP_CHANCE, RARITY_WEIGHTS, boostedWeights } from '../data/loot';
-import { ACT1_SPAWNS } from '../data/spawnTables';
+import { actDef } from '../data/acts';
+import type { ActDef } from '../data/acts';
 import type { AllyDef, EnemyDef, LootSource } from '../data/types';
 import type { Actor, Team } from '../entities/Actor';
 import { Ally } from '../entities/Ally';
@@ -53,6 +52,7 @@ import type { TextKey } from '../i18n';
 import { itemName } from '../i18n/items';
 import { CombatSystem } from '../systems/CombatSystem';
 import { FogSystem } from '../systems/FogSystem';
+import { HazardSystem } from '../systems/HazardSystem';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { ResponsiveCamera } from '../systems/ResponsiveCamera';
 import { separateActors } from '../systems/SeparationSystem';
@@ -71,9 +71,13 @@ const MIN_SPAWN_DISTANCE = 170;
 export interface DungeonMission {
   kind: 'dungeon';
   seed: number;
+  /** Akt (1-basiert); bestimmt Gegner, Optik und Häufigkeit besonderer Räume. Ohne Angabe Akt 1. */
+  act?: number;
   difficulty?: Difficulty;
   /** Wahrscheinlichkeit schwereloser Räume (ohne Angabe der Standardwert des Akts). */
   zeroG?: number;
+  /** Wahrscheinlichkeit infizierter Räume (ohne Angabe der Standardwert des Akts). */
+  infection?: number;
   /** Bossmission: Kennung des Bosses, der im Ausgangsraum wartet. */
   boss?: EnemyId;
   /** Funkspruch zu Beginn der Mission. */
@@ -98,6 +102,8 @@ export interface MissionStats {
   items: number;
   /** Der Boss der Mission wurde besiegt. */
   bossDefeated: boolean;
+  /** Akt der Mission (1-basiert). */
+  act: number;
 }
 
 export function randomSeed(): number {
@@ -113,6 +119,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   rng!: Rng;
   combat!: CombatSystem;
   projectiles!: ProjectileSystem;
+  hazards!: HazardSystem;
   player!: Player;
   enemies: Enemy[] = [];
   allies: Ally[] = [];
@@ -122,6 +129,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   fog: FogSystem | null = null;
   /** Der Boss dieser Mission (solange er lebt). */
   boss: Enemy | null = null;
+  act: ActDef = actDef(1);
   config: MissionConfig = { kind: 'dungeon', seed: 1 };
   waveNumber = 0;
   objectiveKey: TextKey | null = null;
@@ -156,7 +164,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.deathAnnounced = false;
     this.missionOver = false;
     this.objectiveKey = null;
-    this.stats = { timeMs: 0, kills: 0, chestsOpened: 0, chestsTotal: 0, credits: 0, xp: 0, items: 0, bossDefeated: false };
+    this.act = actDef(this.config.kind === 'dungeon' ? (this.config.act ?? 1) : 1);
+    this.stats = { timeMs: 0, kills: 0, chestsOpened: 0, chestsTotal: 0, credits: 0, xp: 0, items: 0, bossDefeated: false, act: this.act.id };
     this.boss = null;
     this.startedAtMs = this.time.now;
     audio.setMusic('mission');
@@ -165,6 +174,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.combat = new CombatSystem(this, this.rng);
     this.projectiles = new ProjectileSystem(this, this, (team) => this.actorsOf(team));
     this.combat.projectiles = this.projectiles;
+    this.hazards = new HazardSystem(this, this.combat, () => [this.player]);
 
     if (this.config.kind === 'dungeon') this.buildDungeon(this.config.seed);
     else this.buildArena();
@@ -214,6 +224,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     for (const ally of this.allies) ally.tick(dt, this.enemies);
     this.allies = this.allies.filter((ally) => ally.active);
     this.projectiles.update(dt);
+    this.hazards.update(dt, time);
     separateActors(this.player, this.enemies);
     this.enemies = this.enemies.filter((enemy) => !enemy.isDead);
     this.fog?.update();
@@ -255,11 +266,15 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   private pendingExit: Vec2 | null = null;
 
   private buildDungeon(seed: number): void {
-    const zeroGChance = this.config.kind === 'dungeon' ? (this.config.zeroG ?? ZEROG.roomChance) : 0;
-    const dungeon = generateDungeon(seed, TILE_SIZE, { zeroGChance });
+    const config = this.config.kind === 'dungeon' ? this.config : null;
+    const dungeon = generateDungeon(seed, TILE_SIZE, {
+      zeroGChance: config?.zeroG ?? this.act.zeroGChance,
+      infectionChance: config?.infection ?? this.act.infectionChance,
+      bossRoomZeroG: config?.boss !== undefined && this.act.bossRoomZeroG,
+    });
     // Aufteilung und Gegner hängen nur vom Seed ab; der Kampf-Zufall (Schaden) bleibt davon getrennt.
     const boss = this.config.kind === 'dungeon' ? this.config.boss : undefined;
-    const plan = planMission(dungeon, ACT1_SPAWNS, createRng(seed ^ 0x9e3779b9), { boss });
+    const plan = planMission(dungeon, this.act.spawns, createRng(seed ^ 0x9e3779b9), { boss });
     this.grid = dungeon.grid;
     this.playerStart = plan.playerStart;
     this.pendingEnemies = plan.encounters.flatMap((encounter) =>
@@ -303,7 +318,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     // Gestein, das an keinen begehbaren Bereich grenzt, wird nicht gezeichnet (-1 = leer).
     const data = this.grid.toRowsOfIds().map((line, row) => line.map((id, col) => (id === 1 && !this.grid.isWallEdge(col, row) ? -1 : id)));
     const map = this.make.tilemap({ data, tileWidth: tileSizeInTexture, tileHeight: tileSizeInTexture });
-    const tileset = map.addTilesetImage('tiles', TEXTURE_KEYS.tiles);
+    const key = TILESET_KEYS[this.act.tileset];
+    const tileset = map.addTilesetImage(key, key);
     if (!tileset) throw new Error('Tileset konnte nicht erzeugt werden');
     const layer = map.createLayer(0, tileset, 0, 0);
     if (!layer) throw new Error('Tilemap-Ebene konnte nicht erzeugt werden');
@@ -363,7 +379,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.player.cancelCommands();
     audio.play('win');
     audio.setMusic('mission');
-    this.profile().completeMission(this.stats.bossDefeated, IMPLEMENTED_ACTS);
+    this.profile().completeMission(this.stats.act, this.stats.bossDefeated);
     this.profile().touch();
     this.game.events.emit(GAME_EVENTS.missionCompleted, { ...this.stats });
   }

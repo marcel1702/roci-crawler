@@ -19,3 +19,20 @@ export const ACT1_SPAWNS: SpawnTable<EnemyId> = {
   guardian: ['brute', 'gunner', 'gunner'],
   treasureGuard: ['thug', 'thug'],
 };
+
+/** Gegnerverteilung für Missionen in Akt 2 (Eros): Schwärme, Sporenträger und Wirte. */
+export const ACT2_SPAWNS: SpawnTable<EnemyId> = {
+  groups: [
+    { enemies: ['infected', 'infected', 'infected'], weight: 4, minDepth: 1 },
+    { enemies: ['infected', 'infected', 'crawler'], weight: 3, minDepth: 1 },
+    { enemies: ['crawler', 'crawler'], weight: 3, minDepth: 1 },
+    { enemies: ['spore', 'infected'], weight: 3, minDepth: 1 },
+    { enemies: ['spore', 'infected', 'infected'], weight: 3, minDepth: 2 },
+    { enemies: ['crawler', 'crawler', 'spore'], weight: 2, minDepth: 2 },
+    { enemies: ['host', 'infected'], weight: 2, minDepth: 3 },
+    { enemies: ['spore', 'spore', 'crawler'], weight: 2, minDepth: 3 },
+    { enemies: ['host', 'spore', 'crawler'], weight: 1, minDepth: 4 },
+  ],
+  guardian: ['host', 'spore', 'spore'],
+  treasureGuard: ['infected', 'crawler'],
+};

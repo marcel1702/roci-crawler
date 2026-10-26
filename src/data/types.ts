@@ -52,12 +52,19 @@ export type EnemyAttack =
   | { kind: 'fan'; windupMs: number; projectileSpeed: number; minRange: number; count: number; spread: number }
   /** Wirft einen Sprengsatz auf die Position des Spielers zu Beginn der Ankündigung; er detoniert am Ende (Radius `radius`). */
   | { kind: 'bomb'; windupMs: number; minRange: number; radius: number }
+  /**
+   * Schleudert `count` Sporenklumpen auf deinen Standort (der erste) und seine Umgebung (`scatter` px). Jeder lässt am Ende
+   * der Ankündigung eine Wucherungszone zurück, die `zoneMs` lang schadet und bremst.
+   */
+  | { kind: 'spore'; windupMs: number; minRange: number; count: number; scatter: number; radius: number; zoneMs: number }
   /** Rennt `distance` Pixel in die angekündigte Richtung und ist danach `dizzyMs` benommen. */
   | { kind: 'charge'; windupMs: number; minRange: number; distance: number; speed: number; dizzyMs: number };
 
 /** Zweite Phase eines Bosses ab einem Lebensanteil: ruft Verstärkung, wird schneller und greift häufiger an. */
 export interface EnrageDef {
   hpFraction: number;
+  /** Zusätzlich: lässt in Abständen Wucherungszonen (mit Warnung) in der Nähe des Spielers entstehen. */
+  rain?: { everyMs: number; radius: number; warnMs: number; zoneMs: number; spread: number };
   /** Kennungen der Gegner, die nachgerufen werden (in dieser Reihenfolge, reihum). */
   summon: readonly string[];
   summonEveryMs: number;
@@ -90,6 +97,8 @@ export interface EnemyDef {
   /** Reihum eingesetzte Angriffe (Bosse); jeweils der erste, der gerade möglich ist. */
   pattern?: readonly EnemyAttack[];
   enrage?: EnrageDef;
+  /** Hinterlässt beim Tod eine Wucherungszone. */
+  deathZone?: { radius: number; zoneMs: number };
 }
 
 /** Ein herbeigerufener Verbündeter (Drohne, Crewmitglied): kämpft eine Weile mit, ist unverwundbar. */

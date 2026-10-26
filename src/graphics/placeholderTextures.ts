@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config/palette';
-import { actorTextureKey, TEXTURE_KEYS, TEXTURE_RES, TILE_SIZE } from '../config/constants';
+import { actorTextureKey, TEXTURE_KEYS, TEXTURE_RES, TILE_SIZE, TILESET_KEYS } from '../config/constants';
+import type { Tileset } from '../config/constants';
 import { CLASSES, CLASS_LIST } from '../data/classes';
 import { ALLIES } from '../data/allies';
 import { ENEMIES } from '../data/enemies';
@@ -10,7 +11,7 @@ import { ENEMIES } from '../data/enemies';
  * die Textur ist TEXTURE_RES-mal so groß. Echte Grafik ersetzt später nur diese Datei.
  */
 export function createPlaceholderTextures(scene: Phaser.Scene): void {
-  createTileset(scene);
+  for (const tileset of Object.keys(PALETTES) as Tileset[]) createTileset(scene, TILESET_KEYS[tileset], PALETTES[tileset]);
   createShadow(scene);
   createRing(scene, TEXTURE_KEYS.targetRing, 17, 2.2, COLORS.accent, 0.95);
   createRing(scene, TEXTURE_KEYS.moveMarker, 11, 2.5, 0xffffff, 0.9);
@@ -40,21 +41,54 @@ function drawTexture(
   g.destroy();
 }
 
-/** Streifen mit drei Kacheln: Index 0 = Boden, Index 1 = Wand, Index 2 = schwereloser Boden. */
-function createTileset(scene: Phaser.Scene): void {
+/** Farben eines Kachelsatzes. */
+interface TilePalette {
+  floor: number;
+  floorLine: number;
+  wall: number;
+  wallLight: number;
+  wallDark: number;
+  /** Wucherung (nur im Streifen, auf allen Welten gleich erkennbar grün). */
+  infected: number;
+  infectedBlob: number;
+}
+
+const PALETTES: Record<Tileset, TilePalette> = {
+  ceres: {
+    floor: COLORS.floor,
+    floorLine: COLORS.floorLine,
+    wall: COLORS.wall,
+    wallLight: COLORS.wallLight,
+    wallDark: COLORS.wallDark,
+    infected: 0x23401c,
+    infectedBlob: 0x6fbf3f,
+  },
+  eros: {
+    floor: 0x16302c,
+    floorLine: 0x1f4540,
+    wall: 0x4c6158,
+    wallLight: 0x6f8a7e,
+    wallDark: 0x2e3f38,
+    infected: 0x2f4f1d,
+    infectedBlob: 0x8bd94d,
+  },
+};
+
+/** Streifen mit vier Kacheln: Index 0 = Boden, 1 = Wand, 2 = schwereloser Boden, 3 = infizierter Boden. */
+function createTileset(scene: Phaser.Scene, key: string, palette: TilePalette): void {
   const s = TILE_SIZE;
-  drawTexture(scene, TEXTURE_KEYS.tiles, s * 3, s, (g) => {
+  drawTexture(scene, key, s * 4, s, (g) => {
     // Boden
-    g.fillStyle(COLORS.floor, 1).fillRect(0, 0, s, s);
-    g.lineStyle(1, COLORS.floorLine, 1).strokeRect(0.5, 0.5, s - 1, s - 1);
-    g.fillStyle(COLORS.floorLine, 1).fillRect(s / 2 - 1, s / 2 - 1, 2, 2);
+    g.fillStyle(palette.floor, 1).fillRect(0, 0, s, s);
+    g.lineStyle(1, palette.floorLine, 1).strokeRect(0.5, 0.5, s - 1, s - 1);
+    g.fillStyle(palette.floorLine, 1).fillRect(s / 2 - 1, s / 2 - 1, 2, 2);
 
     // Wand
     const x = s;
-    g.fillStyle(COLORS.wall, 1).fillRect(x, 0, s, s);
-    g.fillStyle(COLORS.wallLight, 1).fillRect(x, 0, s, 3).fillRect(x, 0, 3, s);
-    g.fillStyle(COLORS.wallDark, 1).fillRect(x, s - 3, s, 3).fillRect(x + s - 3, 0, 3, s);
-    g.fillStyle(COLORS.wallDark, 1);
+    g.fillStyle(palette.wall, 1).fillRect(x, 0, s, s);
+    g.fillStyle(palette.wallLight, 1).fillRect(x, 0, s, 3).fillRect(x, 0, 3, s);
+    g.fillStyle(palette.wallDark, 1).fillRect(x, s - 3, s, 3).fillRect(x + s - 3, 0, 3, s);
+    g.fillStyle(palette.wallDark, 1);
     for (const [px, py] of [
       [6, 6],
       [s - 6, 6],
@@ -71,6 +105,23 @@ function createTileset(scene: Phaser.Scene): void {
     g.lineStyle(1, COLORS.floorZeroGLine, 0.5);
     g.lineBetween(z + 3, 3, z + s - 3, s - 3).lineBetween(z + s - 3, 3, z + 3, s - 3);
     g.fillStyle(COLORS.floorZeroGLine, 1).fillCircle(z + s / 2, s / 2, 1.6);
+
+    // Wucherung: dunkles Grün mit hellen Flecken und Adern, ohne Gitterlinien (wirkt zusammenhängend, wenn Kacheln aneinandergrenzen).
+    const i = s * 3;
+    g.fillStyle(palette.infected, 1).fillRect(i, 0, s, s);
+    g.fillStyle(palette.infectedBlob, 0.5);
+    for (const [px, py, r] of [
+      [8, 9, 5],
+      [21, 7, 3.5],
+      [15, 20, 6],
+      [26, 25, 3],
+      [6, 26, 3.5],
+    ] as const) {
+      g.fillCircle(i + px, py, r);
+    }
+    g.lineStyle(1.5, palette.infectedBlob, 0.7);
+    g.lineBetween(i + 2, s - 4, i + 12, 16).lineBetween(i + 12, 16, i + 18, 4).lineBetween(i + 18, 4, i + s - 2, 8);
+    g.lineBetween(i + 12, 16, i + s - 3, 22);
   });
 }
 

@@ -13,7 +13,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **6** | Klassen & Talente ✅ | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
 | **7** | Schwerelosigkeit ✅ | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
 | **8** | Akt 1: Ceres/Tycho ✅ | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
-| **9** | Akt 2: Eros | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
+| **9** | Akt 2: Eros ✅ | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
 | **10** | Akt 3: Ganymed/Ringtore | Hybrid-Soldaten, Finale am Ringtor, Abspann | Das gesamte Spiel ist in 3–5 Stunden durchspielbar | L |
 | **11** | Politur & Release | Balancing, Audio, Einführung/Tutorial, Performance auf schwachen Geräten, Barrierefreiheit, optional Capacitor-Pakete (iOS/Android) | Spielbare Fassung ohne bekannte Blocker auf Zielgeräten | L |
 
@@ -111,5 +111,16 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitte 6, 11, 12, 12a):
 - **Platzhalter-Audio** (`src/audio/`): synthetisierte Effekte und Flächenmusik, Stummschalter (HUD-Taste, `M`), Einstellungen getrennt vom Spielstand (`core/settings.ts`).
 - Dev-Parameter `&boss` (Gangboss in den Ausgangsraum). Tests: Gegnerdaten, Boss-Plan (Raum, Stabilität der übrigen Räume), Akt-Fortschritt und Speichern, Einstellungen; Browser-Prüfung von Bombe, Fächer, Bosskampf bis Akt-Ende, Karten (drei Größen), Ton.
 
-Bewusst **nicht** enthalten: Dialoge mit Auswahl oder Zwischensequenzen (GDD: Nicht-Ziel), echte Klänge/Musik, Bosskampf-Arena als vorgefertigtes Modul (der Boss kämpft im größten verfügbaren Ausgangsraum), Balancing (Meilenstein 11), Akt 2 und 3.
+Bewusst **nicht** enthalten: Dialoge mit Auswahl oder Zwischensequenzen (GDD: Nicht-Ziel), echte Klänge/Musik, Bosskampf-Arena als vorgefertigtes Modul (der Boss kämpft im Ausgangsraum des Dungeons), Balancing (Meilenstein 11), Akt 3.
+
+## Meilenstein 9: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitte 6 und 7):
+- **Akte datengetrieben** (`data/acts.ts`, `core/story.ts`): Spawn-Tabelle, Boss, Boss-Seed, Anteile besonderer Räume, Kachelsatz und Grundstufe je Akt; Text-Schlüssel `act.<n>.*`. Missionskonsole mit **Reitern** für freigeschaltete Akte, eigene Aufträge (Salz je Akt) und Hauptauftrag je Akt. `Profile.completeMission(akt, boss)` zählt nur den laufenden Akt. Akt 3 braucht damit nur Daten, Texte und Gegner.
+- **Eros-Gegner:** Infizierter, Kriecher (Sprung mit Band-Ankündigung), Sporenträger, Wirt (Elite) und der **Verschmolzene Knoten** (Boss mit Sporenwurf, Bodenschlag, Fächer, Wucherungsregen und Verstärkung in Phase 2).
+- **Neue Mechaniken:** Angriffsart `spore`, **Wucherungszonen** (`systems/HazardSystem`: Warnung, dann Schaden und Bremswirkung über Zeit), **infizierter Boden** (`TILE.infected`, Generator `infectionChance`, Schaden in Anteilen der Leben), Bremswirkung (`Actor.slow`, `moveSpeed`), Tod-Zonen (`deathZone`), Bossraum in der Schwerelosigkeit (`bossRoomZeroG`).
+- **Optik:** zweiter Kachelsatz (Eros, grünlich), Wucherungs-Kachel, Minikarte zeigt infizierten Boden.
+- Dev-Parameter `&act=2` (mit `&boss` der Boss des Akts). Tests: Akt-Daten und -Texte, Wucherung im Dungeon (nie Start/Ausgang, nie zugleich schwerelos, Karte unabhängig, lösbar), Boss-Dungeons aller Akte, Akt-Fortschritt; Browser-Prüfung von Wucherung, Sporenzonen, Bosskampf in der Schwerelosigkeit, Reitern.
+
+Bewusst **nicht** enthalten: Zonen innerhalb von Räumen und Schwerelosigkeit nur in Teilen eines Raums, eigene Musik/Klänge für Eros, Balancing (Meilenstein 11), Akt 3.
 
