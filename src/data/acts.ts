@@ -1,7 +1,7 @@
 import type { Tileset } from '../config/constants';
 import type { TextKey } from '../i18n';
 import type { EnemyId } from './enemies';
-import { ACT1_SPAWNS, ACT2_SPAWNS } from './spawnTables';
+import { ACT1_SPAWNS, ACT2_SPAWNS, ACT3_SPAWNS } from './spawnTables';
 import type { SpawnTable } from '../core/encounters';
 
 export interface ActDef {
@@ -44,6 +44,17 @@ export const ACTS: readonly ActDef[] = [
     bossRoomZeroG: true,
     tileset: 'eros',
     baseLevel: 7,
+  },
+  {
+    id: 3,
+    spawns: ACT3_SPAWNS,
+    boss: 'commander',
+    bossSeed: 20250303,
+    zeroGChance: 0.3,
+    infectionChance: 0.25,
+    bossRoomZeroG: false,
+    tileset: 'ganymede',
+    baseLevel: 13,
   },
 ];
 

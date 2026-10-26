@@ -65,10 +65,11 @@ describe('Gegnerdaten', () => {
     }
   });
 
-  it('jeder Akt hat vier reguläre Gegnertypen, einen Elite und einen Boss', () => {
+  it('jeder Akt hat seine Gegnertypen, genau einen Elite und einen Boss; Akt 3 mischt die früheren Akte', () => {
     const byAct: Record<number, { regular: string[]; elite: string[]; boss: string[] }> = {
       1: { regular: ['drone', 'gunner', 'saboteur', 'thug'], elite: ['brute'], boss: ['gangboss'] },
       2: { regular: ['crawler', 'infected', 'spore'], elite: ['host'], boss: ['knot'] },
+      3: { regular: ['crawler', 'guarddrone', 'hybrid', 'infected', 'saboteur', 'spore', 'thug'], elite: ['sentinel'], boss: ['commander'] },
     };
     for (const act of ACTS) {
       const expected = byAct[act.id];
@@ -79,12 +80,13 @@ describe('Gegnerdaten', () => {
       expect(act.boss).toBe(expected.boss[0]);
       expect(used.has(act.boss)).toBe(false);
     }
-    expect(defs.filter((d) => d.boss).map((d) => d.id).sort()).toEqual(['gangboss', 'knot']);
+    expect(defs.filter((d) => d.boss).map((d) => d.id).sort()).toEqual(['commander', 'gangboss', 'knot']);
   });
 
-  it('die Spawn-Tabellen nutzen nur vorhandene Gegner, und nur Akt 2 hat Sporenträger', () => {
+  it('die Spawn-Tabellen nutzen nur vorhandene Gegner; Akt 1 kennt noch keine Wucherer, die späteren Akte schon', () => {
     for (const act of ACTS) for (const id of usedEnemies(act.spawns)) expect(ENEMIES[id as EnemyId], id).toBeDefined();
     expect(usedEnemies(ACT1_SPAWNS).has('spore')).toBe(false);
+    expect(usedEnemies(ACTS[2]!.spawns).has('spore')).toBe(true);
   });
 
   it('Verstärkung der Bosse und Wucherungszonen sind gültig', () => {

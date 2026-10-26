@@ -36,3 +36,20 @@ export const ACT2_SPAWNS: SpawnTable<EnemyId> = {
   guardian: ['host', 'spore', 'spore'],
   treasureGuard: ['infected', 'crawler'],
 };
+
+/** Gegnerverteilung für Missionen in Akt 3 (Ganymed): Mischung aus allem, dazu Hybrid-Soldaten und Wachdrohnen. */
+export const ACT3_SPAWNS: SpawnTable<EnemyId> = {
+  groups: [
+    { enemies: ['hybrid', 'hybrid'], weight: 4, minDepth: 1 },
+    { enemies: ['guarddrone', 'guarddrone'], weight: 3, minDepth: 1 },
+    { enemies: ['hybrid', 'thug', 'thug'], weight: 2, minDepth: 1 },
+    { enemies: ['crawler', 'crawler', 'hybrid'], weight: 3, minDepth: 2 },
+    { enemies: ['hybrid', 'saboteur'], weight: 3, minDepth: 2 },
+    { enemies: ['guarddrone', 'spore', 'infected'], weight: 2, minDepth: 2 },
+    { enemies: ['sentinel', 'guarddrone'], weight: 2, minDepth: 3 },
+    { enemies: ['hybrid', 'hybrid', 'guarddrone'], weight: 3, minDepth: 3 },
+    { enemies: ['sentinel', 'hybrid', 'saboteur'], weight: 1, minDepth: 4 },
+  ],
+  guardian: ['sentinel', 'hybrid', 'guarddrone'],
+  treasureGuard: ['hybrid', 'guarddrone'],
+};

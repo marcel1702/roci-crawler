@@ -88,7 +88,7 @@ Support im Einzelspiel: Holdens Besonderheit sind **Crew-Rufe** (Fähigkeiten, d
 |---|---|---|---|---|
 | **1** | Ceres / Tycho | Straßenschläger, Gang-Schützen, OPA-Saboteure, Sicherheitsdrohnen | Gangboss (Arbeitsname) | Einführung, einzelne kleine Schwerelosigkeits-Räume |
 | **2** `[Umgesetzt, Meilenstein 9]` | Eros | Protomolekül-Mutanten: Infizierte, Kriecher, Sporenträger (Elite: Wirt) | Der Verschmolzene Knoten (Arbeitsname) | Viele Schwerelosigkeits-Räume (40 %), Infektions-Flächen (35 %), Bossraum schwerelos |
-| **3** | Ganymed / Ringtore | Hybrid-Soldaten, Wachdrohnen | Hybrid-Kommandant (Arbeitsname) | Mischung aus allem, Finale am Ringtor |
+| **3** `[Umgesetzt, Meilenstein 10]` | Ganymed / Ringtor | Hybrid-Soldaten, Wachdrohnen (Elite: Hybrid-Wächter), dazu Gegner der früheren Akte | Hybrid-Kommandant (Arbeitsname) | Mischung aus allem (30 % schwerelos, 25 % infiziert), Finale am Ringtor, Abspann |
 
 Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in Dialogen auf. Umfang: je Akt ca. 4 Missionen + Boss, 60–75 Minuten.
 
@@ -136,6 +136,20 @@ Alle Zahlen sind Startwerte; Kachelsatz grünlich (Eros), Empfehlung ab Stufe 7.
 **Wucherungszonen** und **infizierter Boden** (grüne Flecken in 35 % der Kampf-/Schatzräume ohne Schwerkraft, Raummitte bleibt frei): bremsen auf 70 % Tempo und schaden alle 0,5 s (Boden: 2,5 % der maximalen Leben; Zonen: 35 % eines Treffers der Quelle). Zonen werden vorher durch einen roten Kreis angekündigt, nie aus dem Nichts. Gegner sind immun.
 
 **Der Verschmolzene Knoten** (Arbeitsname): 820 Leben, Radius 25, sehr langsam, wartet im **schwerelosen** Bossraum. Reihum: **Sporenwurf** (3 Zonen um dich, 1 s Ankündigung), **Bodenschlag** (104 px, 0,95 s) und **Fächer** (7 langsame Geschosse). **Zweite Phase** unter 50 %: alle 3,2 s eine angekündigte Zone in deiner Nähe (Wucherungsregen), alle 8 s Verstärkung (Kriecher, Kriecher, Infizierter; höchstens 4, ohne EP/Beute), 25 % öfter Angriffe, 20 % schneller. Beute und Credits wie beim Gangboss, 450 EP.
+
+### Akt 3: Ganymed und Ringtor `[Umgesetzt, Meilenstein 10]`
+
+Alle Zahlen sind Startwerte; blaugrauer Kachelsatz, Empfehlung ab Stufe 13. Die Spawn-Tabelle **mischt** Gegner aller Akte (Schläger, Saboteure, Kriecher, Sporenträger, Infizierte) mit den neuen:
+
+| Gegner | Rolle | Angriff und Ankündigung | Besonderheit |
+|---|---|---|---|
+| **Hybrid-Soldat** | zäher Schütze | zwei schnelle Schüsse hintereinander (Fächer, 0,45 s, zwei fast deckungsgleiche Linien) | 85 LP, hält Abstand |
+| **Wachdrohne** | flinker Streuschütze | breiter Fünferfächer (1 rad), 0,6 s | 40 LP, schnell |
+| **Hybrid-Wächter** (Elite) | Zäher Brocken | Flächenschlag (76 px, 0,7 s) und Sturmangriff (0,7 s, 200 px, danach 1 s benommen) im Wechsel | 330 LP, 110 EP |
+
+**Hybrid-Kommandant** (Arbeitsname, Finale am Ringtor): 960 Leben, wechselt zwischen **Dreiersalve**, **Sturmangriff**, **Sprenggranate** (72 px auf deinen Standort, 0,9 s) und **Bodenschlag** (90 px). Unter 50 %: ruft alle 9 s Soldaten und Wachdrohnen (höchstens 4, ohne EP/Beute), greift 30 % öfter an, läuft 15 % schneller. 520 EP, Bossbeute wie zuvor.
+
+**Abspann** (`scenes/EndingScene`): Nach dem Sieg über den Kommandanten, beim ersten Mal, folgen fünf Erzählseiten (Tippen blättert) und eine Schlussseite mit Dank, Hinweis auf das nicht-kommerzielle Fanprojekt (Figuren aus „The Expanse“, alles andere frei erfunden) und dem Weg zurück zur Rocinante. Danach lässt sich weiterspielen (Aufträge und Bosse wiederholen). Der Spielstand merkt sich `endingSeen`; die Titelkarte zeigt „Akte n/3“. `?ending` zeigt den Abspann zum Testen.
 
 Gegner bemerken den Spieler ab einer Aggro-Reichweite oder wenn sie getroffen werden und geben bei großer Entfernung auf.
 
@@ -243,6 +257,8 @@ Umgesetzt `[Umgesetzt, Meilenstein 4]`:
 - **3 Spielstände** `[Umgesetzt, Meilenstein 5]`: Titelseite mit Karten, Löschen mit Bestätigung, zuletzt gespielter Platz hervorgehoben. Der Spielstand aus Meilenstein 4 (ein Eintrag) wird in Platz 1 übernommen.
 - **Eine Klasse pro Spielstand** wird beim Beginn eines neuen Spiels gewählt `[Umgesetzt als Vorschlag, noch zu bestätigen, siehe Frage 1]`; für eine andere Figur beginnt man ein neues Spiel in einem anderen Platz.
 - Abkürzungen zum Testen: `?slot=2` (Platz laden/beginnen und direkt in den Hub), `?seed=…`/`?mode=arena` (direkt in eine Mission), `?reset` (Platz 1 neu).
+
+- Weitere Spielstandfelder `[Meilenstein 10]`: `endingSeen` (Abspann gesehen, additiv).
 
 ## 12a. Audio `[Vorschlag]`, Platzhalter `[Umgesetzt, Meilenstein 8]`
 

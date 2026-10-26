@@ -14,7 +14,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **7** | Schwerelosigkeit ✅ | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
 | **8** | Akt 1: Ceres/Tycho ✅ | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
 | **9** | Akt 2: Eros ✅ | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
-| **10** | Akt 3: Ganymed/Ringtore | Hybrid-Soldaten, Finale am Ringtor, Abspann | Das gesamte Spiel ist in 3–5 Stunden durchspielbar | L |
+| **10** | Akt 3: Ganymed/Ringtore ✅ | Hybrid-Soldaten, Finale am Ringtor, Abspann | Das gesamte Spiel ist in 3–5 Stunden durchspielbar | L |
 | **11** | Politur & Release | Balancing, Audio, Einführung/Tutorial, Performance auf schwachen Geräten, Barrierefreiheit, optional Capacitor-Pakete (iOS/Android) | Spielbare Fassung ohne bekannte Blocker auf Zielgeräten | L |
 
 ## Querschnittsthemen (laufend)
@@ -122,5 +122,14 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitte 6 und 7):
 - **Optik:** zweiter Kachelsatz (Eros, grünlich), Wucherungs-Kachel, Minikarte zeigt infizierten Boden.
 - Dev-Parameter `&act=2` (mit `&boss` der Boss des Akts). Tests: Akt-Daten und -Texte, Wucherung im Dungeon (nie Start/Ausgang, nie zugleich schwerelos, Karte unabhängig, lösbar), Boss-Dungeons aller Akte, Akt-Fortschritt; Browser-Prüfung von Wucherung, Sporenzonen, Bosskampf in der Schwerelosigkeit, Reitern.
 
-Bewusst **nicht** enthalten: Zonen innerhalb von Räumen und Schwerelosigkeit nur in Teilen eines Raums, eigene Musik/Klänge für Eros, Balancing (Meilenstein 11), Akt 3.
+Bewusst **nicht** enthalten: Zonen innerhalb von Räumen und Schwerelosigkeit nur in Teilen eines Raums, eigene Musik/Klänge für Eros, Balancing (Meilenstein 11).
+
+## Meilenstein 10: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitt 6):
+- **Akt 3 komplett** (nur Daten, Texte, Gegner dank der Akt-Struktur aus Meilenstein 9): Hybrid-Soldat, Wachdrohne, Hybrid-Wächter (Elite), **Hybrid-Kommandant** (Finale: Dreiersalve, Sturmangriff, Sprenggranate, Bodenschlag, Verstärkung in Phase 2); gemischte Spawn-Tabelle, blaugrauer Kachelsatz `ganymede`, Orte, Briefings, Boss-Texte, Crew-Sprüche. `IMPLEMENTED_ACTS = 3`.
+- **Abspann** (`scenes/EndingScene`): fünf Erzählseiten, Dank, Hinweis auf das Fanprojekt, Rückweg zur Rocinante; läuft einmal nach dem letzten Boss (`Profile.endingSeen`, additiv gespeichert), `?ending` zum Testen; Titelkarte zeigt „Akte n/3“.
+- Tests: Gegnerdaten und Spawn-Tabellen aller drei Akte, Boss-Dungeons, Abspann-Texte (Seitenzahl passt zur Szene), `endingSeen` im Spielstand; Browser-Durchlauf Akt-3-Mission, Gegner, Bosskampf bis zum Abspann und zurück in den Hub.
+
+Bewusst **nicht** enthalten: Zwischensequenzen mit Animation, wiederholbarer Abspann im Hub (nur `?ending`), echte Klänge/Musik, Balancing (Meilenstein 11).
 

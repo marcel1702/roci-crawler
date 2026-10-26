@@ -23,6 +23,7 @@ import { planMission } from '../core/encounters';
 import type { TileGrid } from '../core/grid';
 import { parseLevel } from '../core/level';
 import { rollItem } from '../core/items';
+import { IMPLEMENTED_ACTS } from '../core/story';
 import type { Vec2 } from '../core/math';
 import { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
@@ -530,10 +531,22 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.game.events.emit(GAME_EVENTS.say, { speaker, text } satisfies SayLine);
   }
 
-  /** Nach Tod oder Missionsende: Dungeon-Missionen kehren in den Hub zurück, die Testarena startet neu. */
+  /**
+   * Nach Tod oder Missionsende: Dungeon-Missionen kehren in den Hub zurück, die Testarena startet neu.
+   * Nach dem Boss des letzten Akts folgt beim ersten Mal der Abspann.
+   */
   private restart(): void {
-    if (this.config.kind === 'dungeon') this.scene.start(SCENE_KEYS.hub);
-    else this.scene.restart(this.config);
+    if (this.config.kind !== 'dungeon') {
+      this.scene.restart(this.config);
+      return;
+    }
+    const profile = this.profile();
+    if (this.stats.bossDefeated && profile.actsCleared >= IMPLEMENTED_ACTS && !profile.endingSeen) {
+      this.scene.stop(SCENE_KEYS.hud);
+      this.scene.start(SCENE_KEYS.ending);
+    } else {
+      this.scene.start(SCENE_KEYS.hub);
+    }
   }
 }
 

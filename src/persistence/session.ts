@@ -14,6 +14,8 @@ export interface SlotSummary {
   level: number;
   credits: number;
   missionsCompleted: number;
+  /** Abgeschlossene Akte. */
+  actsCleared: number;
   savedAt: number | null;
 }
 
@@ -63,6 +65,7 @@ export class Session {
       level: loaded.progression.level,
       credits: loaded.wallet.credits,
       missionsCompleted: loaded.missionsCompleted,
+      actsCleared: loaded.actsCleared,
       savedAt,
     };
   }

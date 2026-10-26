@@ -63,6 +63,15 @@ const PALETTES: Record<Tileset, TilePalette> = {
     infected: 0x23401c,
     infectedBlob: 0x6fbf3f,
   },
+  ganymede: {
+    floor: 0x1a2438,
+    floorLine: 0x2b3a58,
+    wall: 0x6a7a96,
+    wallLight: 0x93a4c2,
+    wallDark: 0x414e66,
+    infected: 0x23401c,
+    infectedBlob: 0x6fbf3f,
+  },
   eros: {
     floor: 0x16302c,
     floorLine: 0x1f4540,

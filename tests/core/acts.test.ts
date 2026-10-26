@@ -9,6 +9,8 @@ import { IMPLEMENTED_ACTS, LOCATIONS_PER_ACT } from '../../src/core/story';
 import { ACTS, actText } from '../../src/data/acts';
 import { de } from '../../src/i18n/de';
 
+const endingPages = Object.keys(de).filter((k) => k.startsWith('ending.page.'));
+
 describe('Akte', () => {
   it('es gibt so viele Akte wie vorgesehen, lückenlos nummeriert, mit eigenen Boss-Seeds', () => {
     expect(ACTS).toHaveLength(IMPLEMENTED_ACTS);
@@ -45,6 +47,20 @@ describe('Akte', () => {
       expect(act2.infectionChance).toBeGreaterThan(0);
       expect(act2.bossRoomZeroG).toBe(true);
     }
+  });
+});
+
+describe('Abspann', () => {
+  it('hat Erzählseiten (lückenlos nummeriert) und alle Texte der letzten Seite', () => {
+    // So viele Seiten blättert `EndingScene` (PAGES) durch; beide müssen zusammenpassen.
+    expect(endingPages).toHaveLength(5);
+    endingPages.forEach((_, i) => expect(de[`ending.page.${i + 1}` as keyof typeof de], `Seite ${i + 1}`).toBeTruthy());
+    for (const key of ['ending.next', 'ending.thanks', 'ending.credits', 'ending.continue', 'ending.back'] as const) expect(de[key], key).toBeTruthy();
+  });
+
+  it('weist auf das nicht-kommerzielle Fanprojekt hin', () => {
+    expect(de['ending.credits']).toMatch(/nicht-kommerziell/);
+    expect(de['ending.credits']).toMatch(/Fanprojekt/);
   });
 });
 

@@ -70,4 +70,14 @@ describe('Profil: Missionen und Akte', () => {
     expect(parseProfile(raw, ITEM_RULES).profile).toMatchObject({ actsCleared: 3, actMissions: 0 });
     expect(parseProfile({ ...raw, actsCleared: 'x', actMissions: null }, ITEM_RULES).profile).toMatchObject({ actsCleared: 0, actMissions: 0 });
   });
+
+  it('der Abspann gilt als gesehen, sobald er gespeichert wurde; ältere Stände haben ihn nicht gesehen', () => {
+    const profile = new Profile(ITEM_RULES);
+    expect(profile.endingSeen).toBe(false);
+    profile.endingSeen = true;
+    expect(parseProfile(JSON.parse(JSON.stringify(profile)), ITEM_RULES).profile?.endingSeen).toBe(true);
+    const old = { version: 1, classId: 'amos', level: 1, xp: 0, credits: 0, missionsCompleted: 0, bag: [], equipped: {} };
+    expect(parseProfile(old, ITEM_RULES).profile?.endingSeen).toBe(false);
+    expect(parseProfile({ ...old, endingSeen: 'ja' }, ITEM_RULES).profile?.endingSeen).toBe(false);
+  });
 });

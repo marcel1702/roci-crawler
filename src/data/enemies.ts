@@ -260,6 +260,109 @@ export const ENEMIES = {
     aggroRange: 300,
     leashRange: 700,
   },
+  /** Hybrid-Soldat: ein Mensch, vom Protomolekül verstärkt. Feuert zwei schnelle Schüsse kurz hintereinander und hält Abstand. */
+  hybrid: {
+    id: 'hybrid',
+    nameKey: 'enemy.hybrid.name',
+    color: 0x6f8fb5,
+    xp: 34,
+    stats: {
+      maxHp: 85,
+      moveSpeed: 88,
+      radius: 11,
+      damageMin: 9,
+      damageMax: 13,
+      attackRange: 240,
+      attackCooldownMs: 1500,
+    },
+    attack: { kind: 'fan', windupMs: 450, projectileSpeed: 400, minRange: 120, count: 2, spread: 0.14 },
+    aggroRange: 260,
+    leashRange: 420,
+  },
+  /** Wachdrohne: schnell und zäher als die Sicherheitsdrohne, feuert einen breiten Fünferfächer. */
+  guarddrone: {
+    id: 'guarddrone',
+    nameKey: 'enemy.guarddrone.name',
+    color: 0xa7b5cc,
+    xp: 30,
+    stats: {
+      maxHp: 40,
+      moveSpeed: 125,
+      radius: 9,
+      damageMin: 5,
+      damageMax: 8,
+      attackRange: 220,
+      attackCooldownMs: 2400,
+    },
+    attack: { kind: 'fan', windupMs: 600, projectileSpeed: 300, minRange: 100, count: 5, spread: 1.0 },
+    aggroRange: 250,
+    leashRange: 400,
+  },
+  /** Hybrid-Wächter (Elite): Flächenschlag und Sturmangriff im Wechsel. */
+  sentinel: {
+    id: 'sentinel',
+    nameKey: 'enemy.sentinel.name',
+    color: 0x4f6f96,
+    elite: true,
+    xp: 110,
+    loot: 'elite',
+    stats: {
+      maxHp: 330,
+      moveSpeed: 78,
+      radius: 16,
+      damageMin: 18,
+      damageMax: 25,
+      attackRange: 220,
+      attackCooldownMs: 2000,
+    },
+    attack: { kind: 'slam', windupMs: 700, radius: 76 },
+    pattern: [
+      { kind: 'slam', windupMs: 700, radius: 76 },
+      { kind: 'charge', windupMs: 700, minRange: 90, distance: 200, speed: 400, dizzyMs: 1000 },
+    ],
+    aggroRange: 200,
+    leashRange: 380,
+  },
+  /**
+   * Hybrid-Kommandant (Arbeitsname): Dreiersalve, Sturmangriff und Sprenggranaten im Wechsel; in der zweiten Phase ruft er
+   * Soldaten und Wachdrohnen und feuert öfter.
+   */
+  commander: {
+    id: 'commander',
+    nameKey: 'enemy.commander.name',
+    color: 0x35567a,
+    elite: true,
+    loot: 'boss',
+    xp: 520,
+    stats: {
+      maxHp: 960,
+      moveSpeed: 82,
+      radius: 20,
+      damageMin: 18,
+      damageMax: 25,
+      attackRange: 270,
+      attackCooldownMs: 1600,
+    },
+    attack: { kind: 'fan', windupMs: 600, projectileSpeed: 420, minRange: 0, count: 3, spread: 0.4 },
+    pattern: [
+      { kind: 'fan', windupMs: 600, projectileSpeed: 420, minRange: 0, count: 3, spread: 0.4 },
+      { kind: 'charge', windupMs: 750, minRange: 100, distance: 250, speed: 450, dizzyMs: 1200 },
+      { kind: 'bomb', windupMs: 900, minRange: 60, radius: 72 },
+      { kind: 'slam', windupMs: 800, radius: 90 },
+    ],
+    enrage: {
+      hpFraction: 0.5,
+      summon: ['hybrid', 'guarddrone', 'guarddrone'],
+      summonEveryMs: 9000,
+      summonCap: 4,
+      cooldownFactor: 0.7,
+      speedFactor: 1.15,
+      lineKey: 'boss.commander.enrage',
+    },
+    boss: { introKey: 'boss.commander.intro', defeatKey: 'boss.commander.defeat' },
+    aggroRange: 280,
+    leashRange: 700,
+  },
 } as const satisfies Record<string, EnemyDef>;
 
 export type EnemyId = keyof typeof ENEMIES;

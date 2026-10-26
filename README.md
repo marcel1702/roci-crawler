@@ -26,12 +26,12 @@ diese Adresse im Browser des Tablets öffnen. Rechner und Tablet müssen im selb
 - Die drei Kreise unten rechts sind die Fähigkeiten der gewählten Figur, der kleine grüne Kreis ist der Trank. Links oben öffnen Rucksack-Taste (`I`) und Talent-Taste (`T`, mit Zahl der freien Punkte) die Fenster.
 - Im Hub: Station antippen, die Figur läuft hin und benutzt sie. Die Missionskonsole bietet drei Aufträge, der Händler verkauft Ausrüstung, das Terminal wechselt den Spielstand.
 - Ziel jeder Mission: Luftschleuse finden, ihre Wächter besiegen, hineingehen. Truhen öffnen sich beim Herangehen. Nach drei Missionen schaltet sich der **Hauptauftrag** mit dem Gangboss frei (Akt 1).
-- In Akt 2 (Eros) bremsen und schaden grüne Wucherungen am Boden und Sporenzonen; rote Kreise kündigen sie an. Nach dem ersten Boss steht oben in der Missionskonsole ein Reiter „Akt 2“.
+- In Akt 2 (Eros) bremsen und schaden grüne Wucherungen am Boden und Sporenzonen; rote Kreise kündigen sie an. Nach jedem Boss schaltet sich der nächste Akt frei (Reiter oben in der Missionskonsole); nach dem Finale am Ringtor (Akt 3) folgt der Abspann.
 - Ton: Lautsprecher-Taste links oben (oder `M`) schaltet stumm; die Wahl bleibt gespeichert. Der Ton beginnt nach der ersten Berührung.
 - Beute (farbige Kristalle) wird beim Darüberlaufen aufgehoben. Der Rucksack-Knopf links oben (oder Taste `I`) öffnet Ausrüstung und Inventar.
 - Der Spielstand (drei Plätze) wird automatisch im Browser gespeichert. Zum Testen: `?slot=2` lädt/beginnt Platz 2 direkt im Hub, `?reset` beginnt Platz 1 neu.
 - Am Desktop funktioniert die Maus genauso.
-- Zum Ausprobieren: `?seed=123` an die URL hängen lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen, `&zerog=1` macht jeden Kampfraum schwerelos, `&act=2` wählt den Akt, `&boss` stellt dessen Boss in den Ausgangsraum.
+- Zum Ausprobieren: `?seed=123` an die URL hängen lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen, `&zerog=1` macht jeden Kampfraum schwerelos, `&act=3` wählt den Akt, `&boss` stellt dessen Boss in den Ausgangsraum, `?ending` zeigt den Abspann.
 
 ## PWA und Installation auf dem Homescreen
 

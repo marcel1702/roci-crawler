@@ -4,6 +4,7 @@ import { COLORS } from './config/palette';
 import type { Session } from './persistence/session';
 import { currentPixelRatio, startHiDpiScaling, surfaceSize } from './platform/hidpi';
 import { BootScene } from './scenes/BootScene';
+import { EndingScene } from './scenes/EndingScene';
 import { HubScene } from './scenes/HubScene';
 import { HudScene } from './scenes/HudScene';
 import { InventoryScene } from './scenes/InventoryScene';
@@ -26,7 +27,7 @@ export function createGame(container: HTMLElement, session: Session): Phaser.Gam
     disableContextMenu: true,
     render: { antialias: true, powerPreference: 'high-performance' },
     // Reihenfolge = Zeichenreihenfolge: Welt unten, HUD darüber, Overlays ganz oben.
-    scene: [BootScene, TitleScene, HubScene, MissionScene, HudScene, InventoryScene, ShopScene, MissionSelectScene, TalentScene],
+    scene: [BootScene, TitleScene, HubScene, MissionScene, HudScene, InventoryScene, ShopScene, MissionSelectScene, TalentScene, EndingScene],
     // Die Sitzung steht bereit, bevor die erste Szene startet.
     callbacks: { preBoot: (g) => g.registry.set(REGISTRY_SESSION, session) },
   });

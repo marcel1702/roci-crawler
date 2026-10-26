@@ -2,6 +2,7 @@ import { audio } from '../audio';
 import { REGISTRY_PROFILE, REGISTRY_SESSION, SCENE_KEYS } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { clamp } from '../core/math';
+import { IMPLEMENTED_ACTS } from '../core/story';
 import { createRng } from '../core/rng';
 import { CLASS_LIST } from '../data/classes';
 import { t } from '../i18n';
@@ -141,7 +142,7 @@ export class TitleScene extends PanelScene {
     this.text(rect.x + pad, rect.y + pad + 20 * u, name, { size: 20, bold: true, color: hex(info?.color ?? 0xffffff), origin: [0, 0], wrap: rect.w - 2 * pad });
     const lines = [
       `${t('title.level', { level: summary.level })}  ·  ${t('title.credits', { amount: summary.credits })}`,
-      t('title.missions', { n: summary.missionsCompleted }),
+      `${t('title.missions', { n: summary.missionsCompleted })}  ·  ${t('title.acts', { n: summary.actsCleared, total: IMPLEMENTED_ACTS })}`,
     ];
     if (summary.savedAt) lines.push(new Date(summary.savedAt).toLocaleDateString('de-DE'));
     this.text(rect.x + pad, rect.y + pad + 52 * u, lines.join('\n'), { size: 13, color: '#dbe4f5', origin: [0, 0], wrap: rect.w - 2 * pad });

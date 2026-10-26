@@ -36,6 +36,7 @@ export const SCENE_KEYS = {
   shop: 'ShopScene',
   talents: 'TalentScene',
   missionSelect: 'MissionSelectScene',
+  ending: 'EndingScene',
 } as const;
 
 export const REGISTRY_KEYS = {
@@ -162,8 +163,8 @@ export const INFECTION = {
 } as const;
 
 /** Optik einer Welt: Schlüssel der Kachel-Textur je Akt-Welt (siehe `graphics/placeholderTextures`). */
-export type Tileset = 'ceres' | 'eros';
-export const TILESET_KEYS: Record<Tileset, string> = { ceres: 'tiles', eros: 'tiles-eros' };
+export type Tileset = 'ceres' | 'eros' | 'ganymede';
+export const TILESET_KEYS: Record<Tileset, string> = { ceres: 'tiles', eros: 'tiles-eros', ganymede: 'tiles-ganymede' };
 
 export const ZEROG = {
   /** Dauer der Bremswirkung von „Stabilisieren“ (ms). */

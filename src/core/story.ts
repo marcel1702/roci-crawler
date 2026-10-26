@@ -1,5 +1,5 @@
 /** Wie viele Akte spielbar sind (weitere folgen mit den Meilensteinen 9 und 10). */
-export const IMPLEMENTED_ACTS = 2;
+export const IMPLEMENTED_ACTS = 3;
 
 /** Orte (Aufträge) pro Akt. */
 export const LOCATIONS_PER_ACT = 6;
