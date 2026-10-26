@@ -64,11 +64,17 @@ export const GAME_EVENTS = {
   restartRequested: 'roci:restart-requested',
   /** Die Figur betritt erstmals in dieser Mission einen schwerelosen Raum. */
   zeroGEntered: 'roci:zero-g-entered',
+  /** Sprechzeile im HUD. Payload: `SayLine` (Sprecher-Schlüssel, Text-Schlüssel). */
+  say: 'roci:say',
 } as const;
 
 /** Ereignisse innerhalb einer Szene (`scene.events`). Payload actorKilled: (Besiegter, Verursacher | null). */
 export const MISSION_EVENTS = {
   actorKilled: 'mission:actor-killed',
+  /** Ein Boss bemerkt den Spieler zum ersten Mal. Payload: Enemy. */
+  bossEngaged: 'mission:boss-engaged',
+  /** Ein Boss wechselt in die zweite Phase. Payload: Enemy. */
+  bossEnraged: 'mission:boss-enraged',
 } as const;
 
 /** Schlüssel des Spielstands (`Profile`) im Registry: Fortschritt, Credits, Gegenstände. */
@@ -137,6 +143,8 @@ export const KNOCKBACK = {
   projectile: 35,
   /** Standard bei Flächenschaden. */
   area: 70,
+  /** Treffer durch den Sturmangriff eines Gegners. */
+  charge: 200,
   /** Rückstoß beim Schießen (Grundangriff ohne eigene Angabe). */
   recoil: 28,
   /** Rückstoß schießender Gegner. */

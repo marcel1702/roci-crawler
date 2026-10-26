@@ -1,3 +1,4 @@
+import { audio } from '../audio';
 import { REGISTRY_PROFILE, REGISTRY_SESSION, SCENE_KEYS } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { clamp } from '../core/math';
@@ -26,6 +27,7 @@ export class TitleScene extends PanelScene {
   create(): void {
     this.session = this.registry.get(REGISTRY_SESSION) as Session;
     this.session.end();
+    audio.setMusic('off');
     this.registry.remove(REGISTRY_PROFILE);
     this.view = 'slots';
     this.confirmDeleteSlot = null;

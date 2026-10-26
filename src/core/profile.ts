@@ -15,6 +15,10 @@ export interface SaveData {
   xp: number;
   credits: number;
   missionsCompleted: number;
+  /** Abgeschlossene Akte (0 = noch keiner). */
+  actsCleared?: number;
+  /** Abgeschlossene Missionen im laufenden Akt (schaltet den Boss frei). */
+  actMissions?: number;
   /** Verteilte Talentpunkte: Talent-Kennung -> Rang. */
   talents?: Record<string, number>;
   /** Kennungen der Gegenstände, die im aktuellen Angebot des Händlers schon gekauft wurden. */
@@ -35,6 +39,8 @@ export class Profile {
   readonly inventory: Inventory;
   classId: string;
   missionsCompleted = 0;
+  actsCleared = 0;
+  actMissions = 0;
   readonly shopBought = new Set<string>();
   /** Talent-Kennung -> Rang. Wird beim Laden nicht geprüft; der Spieler prüft gegen den Baum seiner Klasse. */
   talents: Record<string, number> = {};
@@ -58,6 +64,17 @@ export class Profile {
     this.onChange?.();
   }
 
+  /** Verbucht eine abgeschlossene Mission; ein besiegter Akt-Boss schließt den Akt ab (höchstens bis `actCount`). */
+  completeMission(bossDefeated: boolean, actCount: number): void {
+    this.missionsCompleted++;
+    if (bossDefeated && this.actsCleared < actCount) {
+      this.actsCleared++;
+      this.actMissions = 0;
+    } else if (!bossDefeated) {
+      this.actMissions++;
+    }
+  }
+
   toJSON(): SaveData {
     return {
       version: SAVE_VERSION,
@@ -66,6 +83,8 @@ export class Profile {
       xp: this.progression.xp,
       credits: this.wallet.credits,
       missionsCompleted: this.missionsCompleted,
+      actsCleared: this.actsCleared,
+      actMissions: this.actMissions,
       shopBought: [...this.shopBought],
       talents: { ...this.talents },
       bag: [...this.inventory.bag],
@@ -95,6 +114,8 @@ export function parseProfile(raw: unknown, rules: ItemRules): ParseResult {
   const wallet = new Wallet(Math.max(0, Math.floor(finiteOr(raw.credits, 0))));
   const profile = new Profile(rules, typeof raw.classId === 'string' ? raw.classId : 'amos', progression, wallet);
   profile.missionsCompleted = Math.max(0, Math.floor(finiteOr(raw.missionsCompleted, 0)));
+  profile.actsCleared = clampInt(raw.actsCleared, 0, 3, 0);
+  profile.actMissions = clampInt(raw.actMissions, 0, 1000, 0);
   if (isRecord(raw.talents)) {
     for (const [id, rank] of Object.entries(raw.talents)) {
       if (typeof rank === 'number' && Number.isFinite(rank) && rank > 0) profile.talents[id] = Math.floor(rank);

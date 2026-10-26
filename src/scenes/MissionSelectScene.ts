@@ -2,6 +2,8 @@ import { REGISTRY_PROFILE, SCENE_KEYS } from '../config/constants';
 import { DIFFICULTY_RULES, generateContracts, progressSeed } from '../core/contracts';
 import type { Contract } from '../core/contracts';
 import { clamp } from '../core/math';
+import { mainMission } from '../core/story';
+import type { MainMission } from '../core/story';
 import type { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
 import { t } from '../i18n';
@@ -9,6 +11,9 @@ import type { TextKey } from '../i18n';
 import { PanelScene, hex } from '../ui/PanelScene';
 import type { Rect } from '../ui/PanelScene';
 import type { MissionConfig } from './MissionScene';
+
+/** Fester Seed des Boss-Dungeons je Akt (gleiche Karte bei jedem Versuch, damit sich der Kampf lernen lässt). */
+const BOSS_SEEDS = [20250101] as const;
 
 /** Missionskonsole: drei Aufträge zur Wahl (zwei normale, ein schwerer); sie wechseln nach jeder Mission. */
 export class MissionSelectScene extends PanelScene {
@@ -39,7 +44,26 @@ export class MissionSelectScene extends PanelScene {
   }
 
   private start(contract: Contract): void {
-    const config: MissionConfig = { kind: 'dungeon', seed: contract.seed, difficulty: contract.difficulty };
+    this.launch({
+      kind: 'dungeon',
+      seed: contract.seed,
+      difficulty: contract.difficulty,
+      briefingKey: `contract.briefing.${contract.location}` as TextKey,
+    });
+  }
+
+  /** Hauptauftrag: der Boss von Akt 1 in einem Dungeon mit festem Seed; ein erneuter Kampf gilt als schwer. */
+  private startBoss(main: MainMission): void {
+    this.launch({
+      kind: 'dungeon',
+      seed: BOSS_SEEDS[main.act - 1] ?? 1,
+      difficulty: main.status === 'repeat' ? 'hard' : 'normal',
+      boss: 'gangboss',
+      briefingKey: 'contract.briefing.boss1',
+    });
+  }
+
+  private launch(config: MissionConfig): void {
     this.scene.stop(this.parent);
     this.scene.start(SCENE_KEYS.mission, config);
   }
@@ -59,15 +83,50 @@ export class MissionSelectScene extends PanelScene {
     const inner: Rect = { x: panel.x + pad, y: panel.y + titleH, w: panel.w - 2 * pad, h: panel.h - titleH - pad };
     const landscape = W >= H * 1.15;
     const n = this.contracts.length;
+    const mainH = (landscape ? (H < 420 * u ? 78 : 84) : 148) * u;
+    const cardsArea = inner.h - mainH - gap;
     const cardW = landscape ? (inner.w - (n - 1) * gap) / n : inner.w;
-    const cardH = landscape ? Math.min(inner.h, 320 * u) : clamp((inner.h - (n - 1) * gap) / n, 110 * u, 200 * u);
+    const cardH = landscape ? Math.min(cardsArea, 260 * u) : clamp((cardsArea - (n - 1) * gap) / n, 96 * u, 190 * u);
 
     this.contracts.forEach((contract, i) => {
       const rect: Rect = landscape
         ? { x: inner.x + i * (cardW + gap), y: inner.y, w: cardW, h: cardH }
         : { x: inner.x, y: inner.y + i * (cardH + gap), w: cardW, h: cardH };
-      this.drawCard(rect, contract, landscape);
+      this.drawCard(rect, contract, landscape && cardH >= 215 * u);
     });
+
+    const cardsBottom = landscape ? inner.y + cardH : inner.y + n * cardH + (n - 1) * gap;
+    this.drawMain({ x: inner.x, y: Math.min(cardsBottom + gap, inner.y + inner.h - mainH), w: inner.w, h: mainH }, landscape);
+  }
+
+  /** Hauptauftrag: gesperrt, bis genug Missionen im Akt geschafft sind; danach der Boss. */
+  private drawMain(rect: Rect, wide: boolean): void {
+    const u = this.u;
+    const pad = 12 * u;
+    const main = mainMission(this.profile.actsCleared, this.profile.actMissions);
+    const locked = main.status === 'locked';
+    const color = locked ? 0x56637f : main.status === 'ready' ? 0xffd34d : 0x5ad66f;
+    const g = this.gfx;
+    g.fillStyle(0x1a2340, 1).fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 10 * u);
+    g.lineStyle(2 * u, color, locked ? 0.7 : 1).strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 10 * u);
+
+    const btnW = wide ? Math.min(rect.w * 0.3, 240 * u) : rect.w - 2 * pad;
+    const btnH = 38 * u;
+    const textW = wide ? rect.w - btnW - 3 * pad : rect.w - 2 * pad;
+    this.text(rect.x + pad, rect.y + pad * 0.8, t('contract.main.title'), { size: 11, color: '#7d8aa8', origin: [0, 0] });
+    this.text(rect.x + pad, rect.y + pad * 0.8 + 15 * u, t('contract.main.boss1.name'), { size: 16, bold: true, color: locked ? '#9fb0d0' : hex(color), origin: [0, 0], wrap: textW });
+    const info = locked
+      ? t('contract.main.locked', { n: main.remaining })
+      : main.allCleared
+        ? t('contract.main.cleared')
+        : t('contract.main.boss1.text');
+    this.text(rect.x + pad, rect.y + pad * 0.8 + 38 * u, info, { size: 12, color: locked ? '#7d8aa8' : '#c9d4ee', origin: [0, 0], wrap: textW });
+    if (locked) return;
+
+    const btn: Rect = wide
+      ? { x: rect.x + rect.w - btnW - pad, y: rect.y + (rect.h - btnH) / 2, w: btnW, h: btnH }
+      : { x: rect.x + pad, y: rect.y + rect.h - btnH - pad * 0.8, w: btnW, h: btnH };
+    this.button(btn, t(main.status === 'repeat' ? 'contract.main.repeat' : 'contract.main.start'), 0x7a5a12, '#ffffff', () => this.startBoss(main), 14);
   }
 
   private drawCard(rect: Rect, contract: Contract, tall: boolean): void {

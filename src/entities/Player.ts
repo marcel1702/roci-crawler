@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio';
 import { ABILITIES } from '../abilities';
 import type { AbilityDef } from '../abilities';
 import { GAME_EVENTS, POTION, TAP, TEXTURE_SCALE, ZEROG, actorTextureKey } from '../config/constants';
@@ -180,6 +181,7 @@ export class Player extends Actor {
     if (!slot || this.isDead || this.isStunned || this.dash || !slot.cooldown.ready) return false;
     const boost = this.boosts[index] ?? NO_BOOST;
     const done = slot.def.execute({ player: this, world: this.world, scene: this.scene, boost });
+    if (done) audio.play('ability');
     if (done) slot.cooldown.trigger(slot.def.cooldownMs * (1 - this.cooldownReduction) * (1 - Math.min(0.6, boost.cooldown)));
     return done;
   }
@@ -189,6 +191,7 @@ export class Player extends Actor {
     const healed = this.heal(Math.round(this.stats.maxHp * (POTION.healFraction + this.potionHealPct)));
     this.potions--;
     this.potionCooldown.trigger(POTION.cooldownMs);
+    audio.play('potion');
     this.world.combat.floatText(this.x, this.y - this.radius - 6, `+${healed}`, COLORS.heal);
     this.world.combat.ring(this.x, this.y, 38, 0x6dff9a, 320);
     return true;
@@ -201,6 +204,7 @@ export class Player extends Actor {
     this.braking = true;
     this.brakeCooldown.trigger(ZEROG.brakeCooldownMs);
     this.cancelCommands();
+    audio.play('whoosh');
     this.world.combat.ring(this.x, this.y, 30, STABILIZE_COLOR, 300);
     return true;
   }
@@ -250,6 +254,7 @@ export class Player extends Actor {
     this.refreshStats();
     this.hp = this.stats.maxHp;
     this.profile.touch();
+    audio.play('levelUp');
     this.world.combat.ring(this.x, this.y, 50, 0xffd34d, 450);
     this.world.combat.floatText(this.x, this.y - this.radius - 20, t('hud.levelUp', { level }), COLORS.elite, 15);
     this.scene.game.events.emit(GAME_EVENTS.playerLevelUp, level);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio';
 import {
   CHEST,
   EXIT_RADIUS,
@@ -23,6 +24,7 @@ import { planMission } from '../core/encounters';
 import type { TileGrid } from '../core/grid';
 import { parseLevel } from '../core/level';
 import { rollItem } from '../core/items';
+import { IMPLEMENTED_ACTS } from '../core/story';
 import type { Vec2 } from '../core/math';
 import { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
@@ -35,7 +37,7 @@ import { ITEM_RULES } from '../data/items';
 import { TEST_ARENA, TEST_ARENA_WAVES } from '../data/levels/testArena';
 import { DROP_CHANCE, RARITY_WEIGHTS, boostedWeights } from '../data/loot';
 import { ACT1_SPAWNS } from '../data/spawnTables';
-import type { AllyDef, LootSource } from '../data/types';
+import type { AllyDef, EnemyDef, LootSource } from '../data/types';
 import type { Actor, Team } from '../entities/Actor';
 import { Ally } from '../entities/Ally';
 import type { AllyOverrides } from '../entities/Ally';
@@ -58,14 +60,33 @@ import { TapControlSystem } from '../systems/TapControlSystem';
 import type { HudScene } from './HudScene';
 
 const NEXT_WAVE_DELAY_MS = 3000;
+/** Bossbeute: Anzahl sicherer Gegenstände und Credits (vor dem Schwierigkeitsfaktor). */
+const BRIEFING_DELAY_MS = 900;
+const BOSS_DROPS = 2;
+const BOSS_CREDITS = 220;
 /** Neue Gegner der Testarena erscheinen nicht näher als so viele Pixel am Spieler. */
 const MIN_SPAWN_DISTANCE = 170;
 
 /** `dungeon`: zufällige Mission mit Ausgang; `arena`: Testarena mit endlosen Gegnerwellen (zum Ausprobieren). */
-export type MissionConfig =
-  /** `zeroG`: Wahrscheinlichkeit schwereloser Räume (ohne Angabe der Standardwert des Akts). */
-  | { kind: 'dungeon'; seed: number; difficulty?: Difficulty; zeroG?: number }
-  | { kind: 'arena' };
+export interface DungeonMission {
+  kind: 'dungeon';
+  seed: number;
+  difficulty?: Difficulty;
+  /** Wahrscheinlichkeit schwereloser Räume (ohne Angabe der Standardwert des Akts). */
+  zeroG?: number;
+  /** Bossmission: Kennung des Bosses, der im Ausgangsraum wartet. */
+  boss?: EnemyId;
+  /** Funkspruch zu Beginn der Mission. */
+  briefingKey?: TextKey;
+}
+
+export type MissionConfig = DungeonMission | { kind: 'arena' };
+
+/** Eine Sprechzeile im HUD (Ereignis `GAME_EVENTS.say`): beide Felder sind Text-Schlüssel. */
+export interface SayLine {
+  speaker: TextKey;
+  text: TextKey;
+}
 
 export interface MissionStats {
   timeMs: number;
@@ -75,6 +96,8 @@ export interface MissionStats {
   credits: number;
   xp: number;
   items: number;
+  /** Der Boss der Mission wurde besiegt. */
+  bossDefeated: boolean;
 }
 
 export function randomSeed(): number {
@@ -97,6 +120,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   drops: LootDrop[] = [];
   exitPortal: ExitPortal | null = null;
   fog: FogSystem | null = null;
+  /** Der Boss dieser Mission (solange er lebt). */
+  boss: Enemy | null = null;
   config: MissionConfig = { kind: 'dungeon', seed: 1 };
   waveNumber = 0;
   objectiveKey: TextKey | null = null;
@@ -131,8 +156,10 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.deathAnnounced = false;
     this.missionOver = false;
     this.objectiveKey = null;
-    this.stats = { timeMs: 0, kills: 0, chestsOpened: 0, chestsTotal: 0, credits: 0, xp: 0, items: 0 };
+    this.stats = { timeMs: 0, kills: 0, chestsOpened: 0, chestsTotal: 0, credits: 0, xp: 0, items: 0, bossDefeated: false };
+    this.boss = null;
     this.startedAtMs = this.time.now;
+    audio.setMusic('mission');
 
     this.rng = createRng(Date.now());
     this.combat = new CombatSystem(this, this.rng);
@@ -163,13 +190,20 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     );
 
     this.events.on(MISSION_EVENTS.actorKilled, this.onActorKilled, this);
+    this.events.on(MISSION_EVENTS.bossEngaged, this.onBossEngaged, this);
+    this.events.on(MISSION_EVENTS.bossEnraged, this.onBossEnraged, this);
     this.game.events.on(GAME_EVENTS.restartRequested, this.restart, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(MISSION_EVENTS.actorKilled, this.onActorKilled, this);
+      this.events.off(MISSION_EVENTS.bossEngaged, this.onBossEngaged, this);
+      this.events.off(MISSION_EVENTS.bossEnraged, this.onBossEnraged, this);
       this.game.events.off(GAME_EVENTS.restartRequested, this.restart, this);
     });
     if (!this.scene.isActive(SCENE_KEYS.hud)) this.scene.launch(SCENE_KEYS.hud);
     this.game.events.emit(GAME_EVENTS.missionReady, this.player);
+    // Beim ersten Start entsteht das HUD erst im nächsten Bild; die Zeile kommt danach.
+    const briefing = this.config.kind === 'dungeon' ? this.config.briefingKey : undefined;
+    if (briefing) this.time.delayedCall(BRIEFING_DELAY_MS, () => this.say('say.radio', briefing));
   }
 
   override update(time: number, delta: number): void {
@@ -188,6 +222,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
       if (!this.deathAnnounced) {
         this.deathAnnounced = true;
         this.game.events.emit(GAME_EVENTS.playerDied);
+        audio.play('lose');
+        audio.setMusic('off');
       }
       return;
     }
@@ -204,8 +240,10 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     return ally;
   }
 
-  spawnEnemy(id: EnemyId, x: number, y: number, difficulty?: EnemyDifficulty): Enemy {
-    const enemy = new Enemy(this, this, x, y, ENEMIES[id], difficulty);
+  spawnEnemy(id: string, x: number, y: number, difficulty?: EnemyDifficulty): Enemy | null {
+    const def = (ENEMIES as Record<string, EnemyDef | undefined>)[id];
+    if (!def) return null;
+    const enemy = new Enemy(this, this, x, y, def, difficulty);
     this.enemies.push(enemy);
     return enemy;
   }
@@ -220,7 +258,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     const zeroGChance = this.config.kind === 'dungeon' ? (this.config.zeroG ?? ZEROG.roomChance) : 0;
     const dungeon = generateDungeon(seed, TILE_SIZE, { zeroGChance });
     // Aufteilung und Gegner hängen nur vom Seed ab; der Kampf-Zufall (Schaden) bleibt davon getrennt.
-    const plan = planMission(dungeon, ACT1_SPAWNS, createRng(seed ^ 0x9e3779b9));
+    const boss = this.config.kind === 'dungeon' ? this.config.boss : undefined;
+    const plan = planMission(dungeon, ACT1_SPAWNS, createRng(seed ^ 0x9e3779b9), { boss });
     this.grid = dungeon.grid;
     this.playerStart = plan.playerStart;
     this.pendingEnemies = plan.encounters.flatMap((encounter) =>
@@ -251,7 +290,9 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     };
     for (const e of this.pendingEnemies) {
       const enemy = this.spawnEnemy(e.id, e.x, e.y, difficulty);
+      if (!enemy) continue;
       if (e.guardian) this.guardians.add(enemy);
+      if (enemy.isBoss) this.boss = enemy;
     }
     this.chests = this.pendingChests.map((c) => new Chest(this, c.x, c.y));
     if (this.pendingExit) this.exitPortal = new ExitPortal(this, this.pendingExit.x, this.pendingExit.y);
@@ -285,6 +326,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     exit.tick(time);
     if (!exit.isOpen && [...this.guardians].every((g) => g.isDead)) {
       exit.unlock();
+      audio.play('unlock');
       this.combat.floatText(exit.x, exit.y - 30, t('hud.exitUnlocked'), '#8dffb0', 13);
       this.combat.ring(exit.x, exit.y, 50, COLORS.exitOpen, 500);
     }
@@ -303,6 +345,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
 
   private openChest(chest: Chest): void {
     chest.markOpened();
+    audio.play('chest');
     this.stats.chestsOpened++;
     const credits = Math.round(this.rng.int(CHEST.creditsMin, CHEST.creditsMax) * this.difficultyRules().credits);
     this.profile().wallet.add(credits);
@@ -318,7 +361,9 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.missionOver = true;
     this.stats.timeMs = this.time.now - this.startedAtMs;
     this.player.cancelCommands();
-    this.profile().missionsCompleted++;
+    audio.play('win');
+    audio.setMusic('mission');
+    this.profile().completeMission(this.stats.bossDefeated, IMPLEMENTED_ACTS);
     this.profile().touch();
     this.game.events.emit(GAME_EVENTS.missionCompleted, { ...this.stats });
   }
@@ -413,6 +458,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
       if (inventory.add(drop.item)) {
         this.drops = this.drops.filter((d) => d !== drop);
         this.stats.items++;
+        audio.play('pickup');
         this.combat.floatText(drop.x, drop.y - 16, t('inv.picked', { name: itemName(drop.item) }), rarityColor(drop.item.rarity), 12);
         drop.destroy();
         this.profile().touch();
@@ -425,12 +471,47 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
 
   private onActorKilled(victim: Actor): void {
     if (!(victim instanceof Enemy) || this.player.isDead) return;
+    // Vom Boss nachgerufene Gegner geben nichts, damit sich das Nachrufen nicht abernten lässt.
+    if (victim.summoned) return;
+    audio.play('kill');
     this.stats.kills++;
     this.stats.xp += victim.def.xp;
     this.player.gainXp(victim.def.xp);
-    this.dropLoot(this.guardians.has(victim) ? 'guardian' : (victim.def.loot ?? 'enemy'), victim.x, victim.y);
+    if (victim.isBoss) this.onBossDefeated(victim);
+    else this.dropLoot(this.guardians.has(victim) ? 'guardian' : (victim.def.loot ?? 'enemy'), victim.x, victim.y);
     this.profile().touch();
     this.combat.floatText(victim.x, victim.y - victim.radius - 18, t('hud.xp', { amount: victim.def.xp }), COLORS.xpText, 12);
+  }
+
+  /** Bossbeute: zwei sichere Gegenstände guter Seltenheit und Credits. */
+  private onBossDefeated(boss: Enemy): void {
+    this.stats.bossDefeated = true;
+    this.boss = null;
+    audio.setMusic('mission');
+    for (let i = 0; i < BOSS_DROPS; i++) this.dropLoot('boss', boss.x, boss.y);
+    const credits = Math.round(BOSS_CREDITS * this.difficultyRules().credits);
+    this.profile().wallet.add(credits);
+    this.stats.credits += credits;
+    this.combat.floatText(boss.x, boss.y - 36, t('hud.credits', { amount: credits }), COLORS.credits, 15);
+    this.combat.ring(boss.x, boss.y, 90, 0xffd34d, 600);
+    this.cameras.main.shake(300, 0.012);
+    if (boss.def.boss) this.say(boss.def.nameKey, boss.def.boss.defeatKey);
+  }
+
+  private onBossEngaged(boss: Enemy): void {
+    audio.play('boss');
+    audio.setMusic('boss');
+    if (boss.def.boss) this.say(boss.def.nameKey, boss.def.boss.introKey);
+  }
+
+  private onBossEnraged(boss: Enemy): void {
+    if (boss.def.enrage) this.say(boss.def.nameKey, boss.def.enrage.lineKey);
+    this.cameras.main.shake(220, 0.008);
+  }
+
+  /** Eine Sprechzeile im HUD (Sprecher und Text als Schlüssel). */
+  private say(speaker: TextKey, text: TextKey): void {
+    this.game.events.emit(GAME_EVENTS.say, { speaker, text } satisfies SayLine);
   }
 
   /** Nach Tod oder Missionsende: Dungeon-Missionen kehren in den Hub zurück, die Testarena startet neu. */

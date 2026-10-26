@@ -4,14 +4,14 @@ import { createPlaceholderTextures } from '../graphics/placeholderTextures';
 import { CLASS_LIST } from '../data/classes';
 import type { Session } from '../persistence/session';
 import { SLOT_COUNT } from '../persistence/session';
-import type { MissionConfig } from './MissionScene';
+import type { DungeonMission, MissionConfig } from './MissionScene';
 
 /**
  * Erzeugt die Platzhalter-Grafik und startet die Titelseite.
  *
  * Abkürzungen zum Ausprobieren (überspringen die Titelseite):
  * - `?seed=123` startet genau diesen Dungeon (`&zerog=1`: jeder Kampfraum schwerelos, `&zerog=0`: keiner),
- *   `?mode=arena` die Testarena (beides mit Spielstand 1),
+ *   `&boss` stellt den Gangboss in den Ausgangsraum, `?mode=arena` die Testarena (beides mit Spielstand 1),
  * - `?slot=2` lädt Spielstand 2 (oder beginnt dort mit Amos) und geht in den Hub,
  * - `?reset` beginnt in Spielstand 1 neu,
  * - `?class=naomi` (amos, naomi, bobbie, holden) wählt die Figur, wenn dabei ein neuer Spielstand entsteht.
@@ -48,5 +48,8 @@ function missionFromParams(params: URLSearchParams): MissionConfig | null {
   const seed = Number.parseInt(params.get('seed') ?? '', 10);
   if (!Number.isFinite(seed)) return null;
   const zeroG = Number.parseFloat(params.get('zerog') ?? '');
-  return Number.isFinite(zeroG) ? { kind: 'dungeon', seed, zeroG } : { kind: 'dungeon', seed };
+  const mission: DungeonMission = { kind: 'dungeon', seed };
+  if (Number.isFinite(zeroG)) mission.zeroG = zeroG;
+  if (params.has('boss')) mission.boss = 'gangboss';
+  return mission;
 }

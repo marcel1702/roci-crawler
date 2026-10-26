@@ -12,7 +12,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **5** | Rocinante-Hub ✅ | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
 | **6** | Klassen & Talente ✅ | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
 | **7** | Schwerelosigkeit ✅ | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
-| **8** | Akt 1: Ceres/Tycho | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
+| **8** | Akt 1: Ceres/Tycho ✅ | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
 | **9** | Akt 2: Eros | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
 | **10** | Akt 3: Ganymed/Ringtore | Hybrid-Soldaten, Finale am Ringtor, Abspann | Das gesamte Spiel ist in 3–5 Stunden durchspielbar | L |
 | **11** | Politur & Release | Balancing, Audio, Einführung/Tutorial, Performance auf schwachen Geräten, Barrierefreiheit, optional Capacitor-Pakete (iOS/Android) | Spielbare Fassung ohne bekannte Blocker auf Zielgeräten | L |
@@ -100,4 +100,16 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitt 8):
 - Dev-Parameter `?zerog=0..1`. Tests: Bewegung, Bremse, Abprallen (4000 Zufallsschritte bleiben im Raum), Stoß, angeglichener Schub, Raster, Dungeon (nie Start/Ausgang, lösbar, Karte unabhängig von der Wahrscheinlichkeit), Weg-Steuerung; Browser-Prüfung von Schub, Gleiten, Stoß, Bremse (Taste und Tipp), Kampf mit allen zwölf Fähigkeiten.
 
 Bewusst **nicht** enthalten: Zonen innerhalb von Räumen und Akt-eigene Häufigkeit (kommt mit Akt 2), Umgebungsgefahren (Infektionsflächen), Geräusche, echtes Balancing (Meilenstein 11).
+
+## Meilenstein 8: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitte 6, 11, 12, 12a):
+- **Gegner Akt 1 komplett:** Schläger, Schütze, Brecher (Elite) plus **OPA-Saboteur** (Sprengsatz auf deinen Standort) und **Sicherheitsdrohne** (Dreierfächer). Neue Angriffsarten in `data/types.ts` (`fan`, `bomb`, `charge`); Spawn-Tabelle von Akt 1 nutzt sie nach Raumtiefe.
+- **Gangboss „Eisenzahn“:** wechselt zwischen Bodenschlag, Sturmangriff (mit Benommenheit als Zeitfenster) und Salve; zweite Phase mit Verstärkung (ohne EP/Beute), eigene Lebensleiste im HUD, Sprüche, sichere gute Beute. Bosslogik steckt in `Enemy` (`def.pattern`, `def.enrage`), nicht in einer Sonderklasse.
+- **Akt-Fortschritt:** `Profile.actsCleared/actMissions` (additiv gespeichert, keine neue Versionsnummer), reine Regeln in `core/story.ts`; **Hauptauftrag** unter den Karten der Missionskonsole (gesperrt → bereit → wiederholbar), fester Boss-Dungeon (`planMission(…, { boss })`).
+- **Texte:** Funkspruch (Briefing) je Ort, Boss-Sprüche, Sprechblase im HUD (`GAME_EVENTS.say`), Ergebnisbildschirm „Akt 1 abgeschlossen“, zusätzliche Crew-Sprüche im Hub.
+- **Platzhalter-Audio** (`src/audio/`): synthetisierte Effekte und Flächenmusik, Stummschalter (HUD-Taste, `M`), Einstellungen getrennt vom Spielstand (`core/settings.ts`).
+- Dev-Parameter `&boss` (Gangboss in den Ausgangsraum). Tests: Gegnerdaten, Boss-Plan (Raum, Stabilität der übrigen Räume), Akt-Fortschritt und Speichern, Einstellungen; Browser-Prüfung von Bombe, Fächer, Bosskampf bis Akt-Ende, Karten (drei Größen), Ton.
+
+Bewusst **nicht** enthalten: Dialoge mit Auswahl oder Zwischensequenzen (GDD: Nicht-Ziel), echte Klänge/Musik, Bosskampf-Arena als vorgefertigtes Modul (der Boss kämpft im größten verfügbaren Ausgangsraum), Balancing (Meilenstein 11), Akt 2 und 3.
 

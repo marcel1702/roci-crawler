@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
+import { audio } from '../audio';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS, TILE_SIZE } from '../config/constants';
 import { COLORS } from '../config/palette';
 import type { Cooldown } from '../core/cooldown';
 import { clamp } from '../core/math';
+import type { Enemy } from '../entities/Enemy';
 import type { Player } from '../entities/Player';
 import { t } from '../i18n';
 import type { TextKey } from '../i18n';
@@ -10,13 +12,17 @@ import { readSafeArea } from '../platform/safeArea';
 import { MINIMAP_KEY } from '../systems/FogSystem';
 import { AbilityButton } from '../ui/AbilityButton';
 import { ResourceBar } from '../ui/ResourceBar';
-import type { MissionScene, MissionStats } from './MissionScene';
+import type { MissionScene, MissionStats, SayLine } from './MissionScene';
 
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 const HINT_VISIBLE_MS = 7000;
 const TARGET_LINGER_MS = 1200;
 const RETRY_DELAY_MS = 700;
 const BANNER_MS = 2200;
+/** Sprechzeilen bleiben mindestens so lange stehen, plus Zeit pro Zeichen. */
+const SAY_MIN_MS = 3200;
+const SAY_MS_PER_CHAR = 45;
+const SAY_MAX_QUEUE = 3;
 
 /**
  * Bedienoberfläche über der Mission. Alle Maße sind in CSS-Pixeln gedacht und werden mit dem
@@ -47,6 +53,7 @@ export class HudScene extends Phaser.Scene {
   private bagButton!: AbilityButton;
   private talentButton!: AbilityButton;
   private brakeButton!: AbilityButton;
+  private soundButton!: AbilityButton;
   private brakeShown = false;
   private hint!: Phaser.GameObjects.Text;
   private banner!: Phaser.GameObjects.Text;
@@ -56,6 +63,12 @@ export class HudScene extends Phaser.Scene {
   private overlayValues!: Phaser.GameObjects.Text;
   private overlayHint!: Phaser.GameObjects.Text;
   private fpsText: Phaser.GameObjects.Text | null = null;
+  private sayBox!: Phaser.GameObjects.Graphics;
+  private sayName!: Phaser.GameObjects.Text;
+  private sayText!: Phaser.GameObjects.Text;
+  private sayQueue: SayLine[] = [];
+  private sayUntil = 0;
+  private sayShown = false;
 
   private shownTargetUntil = 0;
   private lastHpText = '';
@@ -100,6 +113,8 @@ export class HudScene extends Phaser.Scene {
     this.bagButton.setIcon('bag');
     this.talentButton = new AbilityButton(this, COLORS.uiDim);
     this.talentButton.setIcon('talents');
+    this.soundButton = new AbilityButton(this, COLORS.uiDim);
+    this.soundButton.setIcon(audio.muted ? 'muted' : 'sound');
     this.brakeButton = new AbilityButton(this, 0x9fd8ff);
     this.brakeButton.setIcon('brake');
     this.brakeButton.setVisible(false);
@@ -107,6 +122,13 @@ export class HudScene extends Phaser.Scene {
 
     this.hint = this.makeText({ color: '#dbe4f5', align: 'center' }).setOrigin(0.5, 1).setText(t('hud.hint.controls'));
     this.banner = this.makeText({ fontStyle: 'bold', color: '#ffe08a', align: 'center' }).setOrigin(0.5).setVisible(false);
+
+    this.sayBox = this.add.graphics().setVisible(false);
+    this.sayName = this.makeText({ fontStyle: 'bold', color: '#ffe08a' }).setOrigin(0, 0).setVisible(false);
+    this.sayText = this.makeText({ color: '#eef3ff' }).setOrigin(0, 0).setVisible(false);
+    this.sayQueue = [];
+    this.sayShown = false;
+    this.sayUntil = 0;
 
     this.overlayShade = this.add.rectangle(0, 0, 1, 1, 0x000000, 0.6).setOrigin(0).setVisible(false);
     this.overlayTitle = this.makeText({ fontStyle: 'bold', color: '#ff8a8a', align: 'center' }).setOrigin(0.5);
@@ -135,6 +157,7 @@ export class HudScene extends Phaser.Scene {
     on.on(GAME_EVENTS.objectiveChanged, this.onObjectiveChanged, this);
     on.on(GAME_EVENTS.missionCompleted, this.onMissionCompleted, this);
     on.on(GAME_EVENTS.zeroGEntered, this.onZeroGEntered, this);
+    on.on(GAME_EVENTS.say, this.onSay, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
@@ -150,6 +173,7 @@ export class HudScene extends Phaser.Scene {
       on.off(GAME_EVENTS.objectiveChanged, this.onObjectiveChanged, this);
       on.off(GAME_EVENTS.missionCompleted, this.onMissionCompleted, this);
       on.off(GAME_EVENTS.zeroGEntered, this.onZeroGEntered, this);
+      on.off(GAME_EVENTS.say, this.onSay, this);
     });
 
     // Beim ersten Start läuft MissionScene.create() vor diesem create(): das Ereignis wäre verpasst.
@@ -181,6 +205,7 @@ export class HudScene extends Phaser.Scene {
       this.playerName.setText(nameText);
     }
 
+    this.soundButton.setIcon(audio.muted ? 'muted' : 'sound');
     this.talentButton.setState({ cooldownFraction: 0, cooldownSeconds: 0, usable: true, badge: player.talentPoints > 0 ? player.talentPoints : undefined });
     if (this.world === 'hub') {
       this.creditsText.setText(t('inv.credits', { amount: player.profile.wallet.credits }));
@@ -204,7 +229,10 @@ export class HudScene extends Phaser.Scene {
     }
     if (this.brakeShown) this.brakeButton.setState(cooldownState(player.brakeCooldown, true));
 
-    const target = player.attackTarget;
+    // Ein Boss hat Vorrang vor dem Angriffsziel und bleibt sichtbar, solange er kämpft.
+    const boss = this.mission?.boss ?? null;
+    const bossShown = !!boss && !boss.isDead && boss.isEngaged;
+    const target: Enemy | null = bossShown ? boss : player.attackTarget;
     if (target && !target.isDead) this.shownTargetUntil = time + TARGET_LINGER_MS;
     const showTarget = !!target && !target.isDead && time < this.shownTargetUntil;
     this.targetBar.setVisible(showTarget);
@@ -214,13 +242,14 @@ export class HudScene extends Phaser.Scene {
       this.targetName.setText(t(target.def.nameKey)).setColor(target.isElite ? COLORS.elite : '#dbe4f5');
     }
 
+    this.updateSay(time);
     this.drawMinimapMarkers();
   }
 
   /** True, wenn ein Bildschirmpunkt auf einem Bedienelement liegt (Tipp darf dann nicht laufen lassen). */
   isOverUi(screenX: number, screenY: number): boolean {
     const pad = 10 * this.u;
-    const common = [this.bagButton, this.talentButton];
+    const common = [this.bagButton, this.talentButton, this.soundButton];
     const buttons = this.world === 'hub' ? common : [...this.abilityButtons, this.potionButton, this.brakeButton, ...common];
     return buttons.some((button) => button.contains(screenX, screenY, pad));
   }
@@ -238,6 +267,11 @@ export class HudScene extends Phaser.Scene {
     if (this.talentButton.contains(pointer.x, pointer.y, pad)) {
       this.talentButton.press();
       this.openTalents();
+      return;
+    }
+    if (this.soundButton.contains(pointer.x, pointer.y, pad)) {
+      this.soundButton.press();
+      audio.toggleMuted();
       return;
     }
     if (this.world === 'hub') return;
@@ -300,6 +334,8 @@ export class HudScene extends Phaser.Scene {
     this.setOverlayVisible(false);
     this.banner.setVisible(false);
     this.setCombatUi(false);
+    this.sayQueue = [];
+    this.hideSay();
     this.brakeShown = false;
     this.brakeButton.setVisible(false);
     this.waveText.setVisible(false);
@@ -316,6 +352,8 @@ export class HudScene extends Phaser.Scene {
     this.player = player;
     this.mission = this.scene.get(SCENE_KEYS.mission) as MissionScene;
     this.world = 'mission';
+    this.sayQueue = [];
+    this.hideSay();
     this.setCombatUi(true);
     this.brakeShown = false;
     this.brakeButton.setVisible(false);
@@ -364,7 +402,7 @@ export class HudScene extends Phaser.Scene {
 
   private onMissionCompleted(stats: MissionStats): void {
     this.locked = true;
-    this.overlayTitle.setText(t('hud.result.title')).setColor('#8dffb0');
+    this.overlayTitle.setText(t(stats.bossDefeated ? 'hud.result.titleAct' : 'hud.result.title')).setColor(stats.bossDefeated ? '#ffd34d' : '#8dffb0');
     this.overlayLabels.setText(
       [
         t('hud.result.time'),
@@ -484,6 +522,7 @@ export class HudScene extends Phaser.Scene {
     const bagY = top + 19 * u + barH + 3 * u + 5 * u + 10 * u + bagR;
     this.bagButton.layout(left + bagR, bagY, bagR);
     this.talentButton.layout(left + bagR * 3 + 8 * u, bagY, bagR);
+    this.soundButton.layout(left + bagR * 5 + 16 * u, bagY, bagR * 0.8);
 
     // Ziel: oben Mitte
     const targetW = clamp(shortCss * 0.5, 160, 260) * u;
@@ -519,6 +558,7 @@ export class HudScene extends Phaser.Scene {
     this.hint.setFontSize(Math.round(14 * u)).setPosition(width / 2, bottom).setWordWrapWidth(width * 0.55 - 2 * margin);
     this.banner.setFontSize(Math.round(22 * u)).setPosition(width / 2, height * 0.3).setWordWrapWidth(width * 0.8);
     this.layoutOverlay(width, height);
+    this.layoutSay();
   }
 
   private layoutMinimap(right: number, top: number, widthPx: number): void {
@@ -538,6 +578,64 @@ export class HudScene extends Phaser.Scene {
       .fillRoundedRect(x - 4 * this.u, top - 4 * this.u, widthPx + 8 * this.u, heightPx + 8 * this.u, 6 * this.u)
       .lineStyle(Math.max(1, this.u), COLORS.uiDim, 0.6)
       .strokeRoundedRect(x - 4 * this.u, top - 4 * this.u, widthPx + 8 * this.u, heightPx + 8 * this.u, 6 * this.u);
+  }
+
+  // ---------------------------------------------------------------- Sprechzeilen
+
+  private onSay(line: SayLine): void {
+    if (this.world !== 'mission') return;
+    this.sayQueue.push(line);
+    if (this.sayQueue.length > SAY_MAX_QUEUE) this.sayQueue.shift();
+  }
+
+  /** Zeigt die nächste Zeile, sobald die aktuelle ausgelaufen ist. */
+  private updateSay(time: number): void {
+    if (this.sayShown && time >= this.sayUntil) this.hideSay();
+    if (this.sayShown || this.sayQueue.length === 0 || this.locked) return;
+    const line = this.sayQueue.shift() as SayLine;
+    const text = t(line.text);
+    this.sayName.setText(t(line.speaker));
+    this.sayText.setText(`»${text}«`);
+    this.sayShown = true;
+    this.sayUntil = time + Math.max(SAY_MIN_MS, text.length * SAY_MS_PER_CHAR);
+    this.layoutSay();
+  }
+
+  private hideSay(): void {
+    this.sayShown = false;
+    this.sayBox.clear().setVisible(false);
+    this.sayName.setVisible(false);
+    this.sayText.setVisible(false);
+  }
+
+  /** Sprechblase: oben in der Mitte, im Hochformat unter der Minikarte. */
+  private layoutSay(): void {
+    if (!this.sayShown) return;
+    const u = this.u;
+    const { width } = this.scale;
+    const safe = readSafeArea();
+    const margin = 14 * u;
+    const pad = 10 * u;
+    const boxW = Math.min(width - 2 * margin, Math.max(width * 0.5, 280 * u), 520 * u);
+    const portrait = width < this.scale.height;
+    const top = safe.top * u + margin;
+    const mini = this.minimapRect;
+    const y = portrait && this.minimapImage ? mini.y + mini.h + 14 * u : top + 46 * u;
+    const x = (width - boxW) / 2;
+
+    this.sayName.setFontSize(Math.round(12 * u)).setPosition(x + pad, y + pad * 0.8).setVisible(true);
+    this.sayText.setFontSize(Math.round(14 * u)).setWordWrapWidth(boxW - 2 * pad).setPosition(x + pad, y + pad * 0.8 + 17 * u).setVisible(true);
+    const boxH = pad * 1.6 + 17 * u + this.sayText.height;
+    this.sayBox
+      .clear()
+      .setVisible(true)
+      .fillStyle(COLORS.uiPanel, 0.86)
+      .fillRoundedRect(x, y, boxW, boxH, 8 * u)
+      .lineStyle(Math.max(1, u), 0xffe08a, 0.55)
+      .strokeRoundedRect(x, y, boxW, boxH, 8 * u);
+    this.children.bringToTop(this.sayBox);
+    this.children.bringToTop(this.sayName);
+    this.children.bringToTop(this.sayText);
   }
 
   private layoutOverlay(width: number, height: number): void {

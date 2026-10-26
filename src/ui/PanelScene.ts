@@ -1,3 +1,4 @@
+import { audio } from '../audio';
 import Phaser from 'phaser';
 import { REGISTRY_KEYS } from '../config/constants';
 import { COLORS } from '../config/palette';
@@ -80,6 +81,7 @@ export abstract class PanelScene extends Phaser.Scene implements PanelCanvas {
     for (let i = this.hits.length - 1; i >= 0; i--) {
       const hit = this.hits[i];
       if (hit && inside(hit.rect, pointer.x, pointer.y)) {
+        audio.play('click');
         hit.action();
         return;
       }

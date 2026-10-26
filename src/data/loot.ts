@@ -12,6 +12,7 @@ export const RARITY_WEIGHTS: Record<LootSource, Record<Rarity, number>> = {
   elite: { common: 10, uncommon: 40, rare: 35, epic: 13, legendary: 2 },
   guardian: { common: 0, uncommon: 20, rare: 50, epic: 25, legendary: 5 },
   chest: { common: 20, uncommon: 45, rare: 28, epic: 6, legendary: 1 },
+  boss: { common: 0, uncommon: 0, rare: 40, epic: 45, legendary: 15 },
 };
 
 /** Wahrscheinlichkeit, dass die Quelle überhaupt einen Gegenstand fallen lässt. */
@@ -20,4 +21,5 @@ export const DROP_CHANCE: Record<LootSource, number> = {
   elite: 1,
   guardian: 1,
   chest: 1,
+  boss: 1,
 };

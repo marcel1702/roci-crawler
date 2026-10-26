@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio';
 import {
   GAME_EVENTS,
   MAX_FRAME_SECONDS,
@@ -59,7 +60,11 @@ export class HubScene extends Phaser.Scene implements WorldContext {
   player!: Player;
   readonly enemies: readonly Enemy[] = [];
 
-  /** Im Hub gibt es keine Kämpfe, also auch keine Verbündeten. */
+  /** Im Hub gibt es keine Kämpfe, also auch keine Verbündeten oder Gegner. */
+  spawnEnemy(): null {
+    return null;
+  }
+
   spawnAlly(): null {
     return null;
   }
@@ -85,6 +90,7 @@ export class HubScene extends Phaser.Scene implements WorldContext {
     this.crew = [];
     this.pending = null;
     this.speech = null;
+    audio.setMusic('hub');
 
     this.createTilemap();
     const kinds: [string, StationKind][] = [['M', 'missions'], ['W', 'locker'], ['H', 'trader'], ['T', 'terminal']];
@@ -198,7 +204,10 @@ export class HubScene extends Phaser.Scene implements WorldContext {
   }
 
   private say(member: CrewMember): void {
-    const key = `crew.${member.id}.${(member.lineIndex % 2) + 1}` as TextKey;
+    // Nach Akt 1 kommt ein zusätzlicher Spruch zur Lage dazu und zuerst dran.
+    const keys = [`crew.${member.id}.1`, `crew.${member.id}.2`] as TextKey[];
+    if (this.player.profile.actsCleared >= 1) keys.unshift(`crew.${member.id}.act1` as TextKey);
+    const key = keys[member.lineIndex % keys.length] as TextKey;
     member.lineIndex++;
     this.speech?.destroy();
     this.speech = this.add

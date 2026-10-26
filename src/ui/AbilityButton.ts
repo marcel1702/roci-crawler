@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { AbilityIcon } from '../abilities';
 import { COLORS } from '../config/palette';
 
-export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents' | 'brake';
+export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents' | 'brake' | 'sound' | 'muted';
 
 export interface ButtonState {
   /** Verbleibender Anteil der Abklingzeit, 1 = gerade ausgelöst, 0 = bereit. */
@@ -226,6 +226,19 @@ export class AbilityButton {
           const tipX = x + dx * r * 0.3;
           const tipY = y + dy * r * 0.3;
           g.fillTriangle(tipX, tipY, x + dx * r * 0.62 + px * r * 0.17, y + dy * r * 0.62 + py * r * 0.17, x + dx * r * 0.62 - px * r * 0.17, y + dy * r * 0.62 - py * r * 0.17);
+        }
+        break;
+      }
+      case 'sound':
+      case 'muted': {
+        // Lautsprecher: Kasten mit Trichter; Wellen bei Ton, Kreuz bei stumm.
+        g.fillRect(x - r * 0.48, y - r * 0.16, r * 0.2, r * 0.32);
+        g.fillTriangle(x - r * 0.28, y - r * 0.16, x - r * 0.28, y + r * 0.16, x + r * 0.02, y + r * 0.46);
+        g.fillTriangle(x - r * 0.28, y - r * 0.16, x + r * 0.02, y - r * 0.46, x + r * 0.02, y + r * 0.46);
+        if (icon === 'sound') {
+          for (const k of [0.3, 0.52]) g.beginPath().arc(x + r * 0.02, y, r * k, -0.85, 0.85).strokePath();
+        } else {
+          g.lineBetween(x + r * 0.2, y - r * 0.22, x + r * 0.58, y + r * 0.22).lineBetween(x + r * 0.2, y + r * 0.22, x + r * 0.58, y - r * 0.22);
         }
         break;
       }

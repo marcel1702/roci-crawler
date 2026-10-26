@@ -49,8 +49,18 @@ const CHEST_CHANCE_COMBAT_ROOM = 0.25;
 /** Räume ab dieser Fläche (Kacheln) bekommen einen zusätzlichen Gegner. */
 const BIG_ROOM_AREA = 70;
 
+export interface PlanOptions<Id extends string> {
+  /** Bossmission: Statt der Wächter steht dieser Boss allein in der Mitte des Ausgangsraums. */
+  boss?: Id;
+}
+
 /** Verteilt Gegner, Truhen, Start und Ausgang auf einen Dungeon. Rein deterministisch bei gleichem Rng-Zustand. */
-export function planMission<Id extends string>(dungeon: Dungeon, table: SpawnTable<Id>, rng: Rng): MissionPlan<Id> {
+export function planMission<Id extends string>(
+  dungeon: Dungeon,
+  table: SpawnTable<Id>,
+  rng: Rng,
+  options: PlanOptions<Id> = {},
+): MissionPlan<Id> {
   const tileSize = dungeon.grid.tileSize;
   const start = dungeon.rooms.find((r) => r.role === 'start') as Room;
   const exit = dungeon.rooms.find((r) => r.role === 'exit') as Room;
@@ -62,9 +72,14 @@ export function planMission<Id extends string>(dungeon: Dungeon, table: SpawnTab
     switch (room.role) {
       case 'start':
         break;
-      case 'exit':
-        encounters.push({ roomId: room.id, enemies: placeEnemies(room, table.guardian, tileSize, rng) });
+      case 'exit': {
+        // Die Wächter werden immer gewürfelt (und bei einem Boss verworfen), damit die übrigen Räume gleich bleiben.
+        const guards = placeEnemies(room, table.guardian, tileSize, rng);
+        const center = roomCenterPx(room, tileSize);
+        const enemies = options.boss !== undefined ? [{ id: options.boss, x: center.x, y: center.y }] : guards;
+        encounters.push({ roomId: room.id, enemies });
         break;
+      }
       case 'treasure': {
         const center = roomCenterPx(room, tileSize);
         chests.push({ roomId: room.id, x: center.x, y: center.y });

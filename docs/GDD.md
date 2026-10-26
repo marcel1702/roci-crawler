@@ -92,6 +92,14 @@ Support im Einzelspiel: Holdens Besonderheit sind **Crew-Rufe** (Fähigkeiten, d
 
 Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in Dialogen auf. Umfang: je Akt ca. 4 Missionen + Boss, 60–75 Minuten.
 
+### Ablauf von Akt 1 `[Umgesetzt, Meilenstein 8]`
+
+- **Aufträge** (Normal/Schwer, Ort Ceres oder Tycho) sind frei wählbar; jeder abgeschlossene zählt für den **Akt-Fortschritt**. Jeder Ort hat einen **Funkspruch** zu Missionsbeginn (Briefing, auch auf den Hinweis zu neuen Gegnern: Saboteure, Drohnen, Schwerelosigkeit).
+- Nach **3 Missionen** schaltet sich der **Hauptauftrag** „Ceres: Eisenzahns Dock“ frei (unter den Karten der Missionskonsole): ein Dungeon mit festem Seed, der Boss steht allein im Ausgangsraum, die Luftschleuse öffnet sich erst nach seinem Tod.
+- **Akt 1 abgeschlossen:** Ergebnisbildschirm „Akt 1 abgeschlossen“, die Besatzung kommentiert die Lage im Hub, die Karte zeigt „Akt 2 folgt in einer späteren Version“. Der Boss lässt sich erneut herausfordern (dann Schwer, ohne Auswirkung auf den Fortschritt), normale Aufträge laufen weiter.
+- Texte (Briefings, Boss-Sprüche, Crew-Sprüche) sind Platzhalter und noch nicht inhaltlich abgestimmt (Frage 4).
+- Schwierigkeitskurve: Gegner wachsen mit deiner Stufe (+6 % Leben, +4 % Schaden je Stufe); ein vollständig geräumter Auftrag bringt im Mittel ca. 430 EP (Simulation über 40 Seeds: 307–628), nach drei Aufträgen ist man etwa Stufe 7–8, und der Boss wächst mit dieser Stufe mit. Das Tempo des Aufstiegs ist hoch und wird in Meilenstein 11 abgestimmt.
+
 ### Kampf und Gegner-Regeln `[Umgesetzt, Meilenstein 2]`
 
 **Lesbarkeit vor Härte:** Jeder Gegnerangriff wird vorher durch eine **rote Gefahrenzone** angekündigt. Die Richtung wird beim Start festgelegt; wer sich herausbewegt, wird nicht getroffen. Betäubung unterbricht den Angriff.
@@ -101,6 +109,18 @@ Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in D
 | **Gang-Schläger** | Nahkämpfer, in Gruppen | Schlag, 0,3 s Ankündigung (roter Kegel) | schnell, schwach |
 | **Gang-Schütze** | Fernkämpfer | Schuss, 0,5 s Ankündigung (rote Schusslinie), Geschoss fliegt sichtbar | hält Abstand, braucht Sichtlinie, Wände sind Deckung |
 | **Gang-Brecher** (Elite) | Zäher Brocken | Flächenschlag, 0,75 s Ankündigung (wachsender roter Kreis), 62 px | langsam, goldener Rand, 80 EP |
+| **OPA-Saboteur** `[Meilenstein 8]` | Flächen-Kontrolle aus der Ferne | wirft einen Sprengsatz auf deinen **Standort zu Beginn** der 0,9 s Ankündigung (roter Kreis am Ziel, 48 px), er detoniert am Ende | hält Abstand, schwach (32 LP), 22 EP |
+| **Sicherheitsdrohne** `[Meilenstein 8]` | Flinker Schütze | Fächer aus 3 Geschossen, 0,55 s Ankündigung (drei rote Linien) | schnell, sehr zerbrechlich (24 LP), 18 EP |
+
+**Gangboss „Eisenzahn“** (Arbeitsname) `[Umgesetzt, Meilenstein 8]`, alle Zahlen sind Startwerte: 640 Leben (wachsen mit Stufe und Schwierigkeit), Radius 19, wartet allein in der Mitte des Ausgangsraums. Er wechselt reihum zwischen drei Angriffen, jeweils dem ersten, der gerade möglich ist (alle mit Gefahrenzone):
+
+| Angriff | Wann | Ankündigung | Wirkung |
+|---|---|---|---|
+| **Bodenschlag** | du bist nah | 0,85 s, Kreis 84 px | großer Schaden, stößt weg |
+| **Sturmangriff** | du bist 90–230 px entfernt, Sichtlinie | 0,8 s, rotes Band in Laufrichtung | rennt 230 px (Tempo 430) und trifft einmal; danach **benommen** (1,3 s; gegen eine Wand 1,95 s): das Zeitfenster für Schaden |
+| **Salve** | Sichtlinie, mittlere Entfernung | 0,65 s, fünf rote Linien (Fächer, 52°) | fünf Geschosse |
+
+**Zweite Phase** unter 50 % Leben: ruft alle 9 s Verstärkung (Schläger, Schläger, Saboteur; höchstens 3 gleichzeitig, **ohne Erfahrung und Beute**), greift 25 % öfter an und läuft 20 % schneller. Sprüche beim ersten Sehen, beim Wechsel der Phase und beim Besiegen. Die Lebensleiste mit Namen steht oben in der Mitte, solange er kämpft. **Beute:** zwei sichere Gegenstände (selten bis legendär, nie gewöhnlich/ungewöhnlich) und 220 Credits (× Schwierigkeit), 400 EP.
 
 Gegner bemerken den Spieler ab einer Aggro-Reichweite oder wenn sie getroffen werden und geben bei großer Entfernung auf.
 
@@ -191,14 +211,15 @@ Umgesetzt in Meilenstein 5 `[Umgesetzt]`: Der Hub ist eine kleine begehbare Kart
 | **Spielstand-Terminal** | Frachtraum | Zurück zur Titelseite (anderen Spielstand laden) |
 | **Besatzung** | Messe | Die drei übrigen Figuren mit je zwei **Platzhalter-Sprüchen** (Texte sind vorläufig und noch nicht inhaltlich abgestimmt) |
 
-Aufträge zeigen Akt 1 (Ceres/Tycho); echte Akt-Wahl und Handlung folgen mit den Akten (Meilensteine 8–10). Tränke füllen sich zu jeder Mission wieder auf.
+Aufträge zeigen Akt 1 (Ceres/Tycho); der Hauptauftrag mit dem Boss steht darunter (Abschnitt 6). Akt 2 und 3 folgen (Meilensteine 9–10). Tränke füllen sich zu jeder Mission wieder auf. Nach Akt 1 hat jede Figur einen zusätzlichen Spruch zur Lage.
 
 ## 12. Speichern `[Vorgabe: localStorage/IndexedDB]`
 
 Umgesetzt `[Umgesetzt, Meilenstein 4]`:
 
 - **localStorage** (ein Eintrag, JSON) mit **Versionsnummer** und vorbereiteten Migrationen; IndexedDB erst, wenn der Platz nicht reicht.
-- Gespeichert werden Stufe, Erfahrung, Credits, Rucksack, Ausrüstung, abgeschlossene Missionen.
+- Gespeichert werden Stufe, Erfahrung, Credits, Rucksack, Ausrüstung, Talente, abgeschlossene Missionen und der Akt-Fortschritt (`actsCleared`, `actMissions`; fehlende Felder in älteren Ständen gelten als 0, deshalb keine neue Versionsnummer).
+- **Einstellungen** (Ton an/aus, Lautstärken) liegen getrennt im Gerät (`roci-crawler:settings`), nicht im Spielstand.
 - **Autospeichern** kurz nach jeder Änderung (gebündelt) und sofort, wenn die App in den Hintergrund wechselt oder schließt.
 - **Robust:** Unbrauchbare Gegenstände werden verworfen statt den ganzen Spielstand; beschädigte Daten werden vor dem Überschreiben als Sicherung abgelegt; ein Spielstand einer neueren Version wird nie überschrieben; fehlender oder voller Speicher bricht das Spiel nicht ab.
 - `navigator.storage.persist()` wird angefragt, damit Safari den Spielstand nicht räumt.
@@ -206,6 +227,12 @@ Umgesetzt `[Umgesetzt, Meilenstein 4]`:
 - **3 Spielstände** `[Umgesetzt, Meilenstein 5]`: Titelseite mit Karten, Löschen mit Bestätigung, zuletzt gespielter Platz hervorgehoben. Der Spielstand aus Meilenstein 4 (ein Eintrag) wird in Platz 1 übernommen.
 - **Eine Klasse pro Spielstand** wird beim Beginn eines neuen Spiels gewählt `[Umgesetzt als Vorschlag, noch zu bestätigen, siehe Frage 1]`; für eine andere Figur beginnt man ein neues Spiel in einem anderen Platz.
 - Abkürzungen zum Testen: `?slot=2` (Platz laden/beginnen und direkt in den Hub), `?seed=…`/`?mode=arena` (direkt in eine Mission), `?reset` (Platz 1 neu).
+
+## 12a. Audio `[Vorschlag]`, Platzhalter `[Umgesetzt, Meilenstein 8]`
+
+- **Effekte und Flächenmusik werden zur Laufzeit synthetisiert** (WebAudio, keine Dateien): Treffer, Schuss, Schwung, Explosion, Fähigkeit, Trank, Beute, Truhe, Stufenaufstieg, Besiegt, Boss-Brüllen, Schleuse, Sieg, Niederlage, Stabilisieren, Tastendruck. Musik: ruhige Akkordflächen für Hub und Mission, im Bosskampf tiefer mit Puls.
+- Ton startet nach der ersten Bedienung (Browser-Regel) und pausiert, wenn die App in den Hintergrund geht. **Stummschalten:** Lautsprecher-Taste im HUD oder Taste `M`; die Wahl bleibt gespeichert.
+- Echte Klänge und Musik kommen später (Meilenstein 11); sie ersetzen nur `src/audio/engine.ts`.
 
 ## 13. Nicht-Ziele
 
@@ -216,7 +243,7 @@ Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwisc
 1. **Eine Klasse pro Spielstand** (so umgesetzt) oder im Hub wechselbar? (Meilenstein 6)
 2. **Holdens Crew-Rufe** (so umgesetzt: Sperrfeuer, Amos greift ein, Inspirieren): einverstanden?
 3. ~~Schwerelosigkeit: direkte Steuerung oder Autopilot~~ `[Entschieden, bitte bestätigen]` direkte Steuerung mit „Stabilisieren“ und Angriffshilfe (Abschnitt 8); nach dem Tablet-Test nachjustieren.
-4. **Gegner und Bosse:** eigene Figuren im Universum (Vorschlag) oder bekannte Figuren aus Büchern/Serie? (Meilenstein 8)
+4. **Gegner und Bosse:** eigene Figuren im Universum (so umgesetzt: Gangboss „Eisenzahn“ ist erfunden) oder bekannte Figuren aus Büchern/Serie? Die Texte (Briefings, Sprüche) sind Platzhalter.
 5. ~~Hosting für den Tablet-Test~~ `[Entschieden]` GitHub Pages (siehe README).
 6. **Titel:** „Roci Crawler“ ist ein Arbeitstitel.
-7. **Audio:** ab wann Platzhalter-Effekte und Musik? (Vorschlag: ab Meilenstein 8)
+7. ~~Audio: ab wann Platzhalter-Effekte und Musik?~~ `[Entschieden, bitte bestätigen]` synthetisierte Platzhalter ab Meilenstein 8 (Abschnitt 12a).

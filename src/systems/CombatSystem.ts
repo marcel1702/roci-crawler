@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { audio } from '../audio';
 import { CRIT_MULTIPLIER, KNOCKBACK, MISSION_EVENTS } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { rollDamage } from '../core/combat';
@@ -21,6 +22,7 @@ export class CombatSystem {
     if (attacker.basic.kind === 'melee') return this.meleeAttack(attacker, target);
 
     attacker.faceToward(target.x, target.y);
+    audio.play('shoot');
     const crit = attacker.critChance > 0 && this.rng.chance(attacker.critChance);
     const amount = Math.round(rollDamage(attacker.stats, this.rng) * attacker.damageMultiplier * (crit ? CRIT_MULTIPLIER : 1));
     const angle = Math.atan2(target.y - attacker.y, target.x - attacker.x);
@@ -97,6 +99,7 @@ export class CombatSystem {
   dealDamage(source: Actor | null, target: Actor, amount: number, crit = false): number {
     if (target.isDead) return 0;
     const dealt = target.takeDamage(amount);
+    audio.play(target.team === 'player' ? 'hurt' : 'hit');
     const color = target.team === 'player' ? COLORS.damageTaken : crit ? COLORS.crit : COLORS.damage;
     this.floatText(target.x, target.y - target.radius - 6, crit ? `${dealt}!` : String(dealt), color, crit ? 17 : 13);
     if (target.team === 'player') this.scene.cameras.main.shake(90, 0.004);
@@ -147,6 +150,7 @@ export class CombatSystem {
 
   /** Weißer Schwungbogen in Richtung `angle` (auch für Schläge ins Leere). */
   swingFx(attacker: Actor, angle: number): void {
+    audio.play('swing');
     const reach = attacker.radius + attacker.stats.attackRange * 0.6 + 4;
     const swing = this.scene.add.graphics({ x: attacker.x, y: attacker.y });
     swing.setDepth(50).setRotation(angle);

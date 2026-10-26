@@ -1,8 +1,10 @@
 import './styles.css';
 import { ITEM_RULES } from './data/items';
+import { audio } from './audio';
 import { createGame } from './game';
 import { Session } from './persistence/session';
 import { browserStorage } from './persistence/saveStore';
+import { loadSettings, saveSettings } from './persistence/settingsStore';
 import { registerServiceWorker } from './pwa/register';
 
 declare global {
@@ -15,7 +17,10 @@ declare global {
 const container = document.getElementById('game');
 if (!container) throw new Error('#game fehlt in index.html');
 
-const session = new Session(browserStorage(), ITEM_RULES);
+const storage = browserStorage();
+audio.init(loadSettings(storage), (settings) => saveSettings(storage, settings));
+
+const session = new Session(storage, ITEM_RULES);
 const game = createGame(container, session);
 if (import.meta.env.DEV) window.__roci = game;
 

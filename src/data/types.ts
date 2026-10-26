@@ -2,7 +2,7 @@ import type { ActorStats, LevelGrowth } from '../core/stats';
 import type { TextKey } from '../i18n';
 
 /** Woher Beute stammt; bestimmt Dropchance und Seltenheit (siehe data/loot.ts). */
-export type LootSource = 'enemy' | 'elite' | 'guardian' | 'chest';
+export type LootSource = 'enemy' | 'elite' | 'guardian' | 'chest' | 'boss';
 
 export type ClassId = 'amos' | 'naomi' | 'bobbie' | 'holden';
 
@@ -42,17 +42,33 @@ export interface ClassDef {
 /**
  * Wie ein Gegner angreift. Jeder Angriff hat eine Ankündigung (`windupMs`), in der der Gegner stillsteht
  * und die Gefahrenzone zeigt; wer sich währenddessen herausbewegt, wird nicht getroffen.
+ * `minRange` (bei Angriffen aus der Ferne): Unterschreitet der Spieler diesen Abstand (Mittelpunkte), weicht der Gegner zurück.
  */
 export type EnemyAttack =
   | { kind: 'melee'; windupMs: number }
   | { kind: 'slam'; windupMs: number; radius: number }
-  | {
-      kind: 'ranged';
-      windupMs: number;
-      projectileSpeed: number;
-      /** Unterschreitet der Spieler diesen Abstand (Mittelpunkte), weicht der Gegner zurück. */
-      minRange: number;
-    };
+  | { kind: 'ranged'; windupMs: number; projectileSpeed: number; minRange: number }
+  /** Fächer aus `count` Geschossen, `spread` Radiant breit. */
+  | { kind: 'fan'; windupMs: number; projectileSpeed: number; minRange: number; count: number; spread: number }
+  /** Wirft einen Sprengsatz auf die Position des Spielers zu Beginn der Ankündigung; er detoniert am Ende (Radius `radius`). */
+  | { kind: 'bomb'; windupMs: number; minRange: number; radius: number }
+  /** Rennt `distance` Pixel in die angekündigte Richtung und ist danach `dizzyMs` benommen. */
+  | { kind: 'charge'; windupMs: number; minRange: number; distance: number; speed: number; dizzyMs: number };
+
+/** Zweite Phase eines Bosses ab einem Lebensanteil: ruft Verstärkung, wird schneller und greift häufiger an. */
+export interface EnrageDef {
+  hpFraction: number;
+  /** Kennungen der Gegner, die nachgerufen werden (in dieser Reihenfolge, reihum). */
+  summon: readonly string[];
+  summonEveryMs: number;
+  /** Höchstens so viele Nachgerufene gleichzeitig. */
+  summonCap: number;
+  /** Faktor auf die Angriffs-Abklingzeit (< 1 = öfter). */
+  cooldownFactor: number;
+  speedFactor: number;
+  /** Spruch beim Wechsel der Phase. */
+  lineKey: TextKey;
+}
 
 export interface EnemyDef {
   id: string;
@@ -69,6 +85,11 @@ export interface EnemyDef {
   aggroRange: number;
   /** Ab diesem Abstand gibt der Gegner die Verfolgung auf. */
   leashRange: number;
+  /** Boss: eigene Lebensleiste im HUD, ein Spruch beim ersten Sehen und beim Besiegen; `attack` ist der erste Angriff von `pattern`. */
+  boss?: { introKey: TextKey; defeatKey: TextKey };
+  /** Reihum eingesetzte Angriffe (Bosse); jeweils der erste, der gerade möglich ist. */
+  pattern?: readonly EnemyAttack[];
+  enrage?: EnrageDef;
 }
 
 /** Ein herbeigerufener Verbündeter (Drohne, Crewmitglied): kämpft eine Weile mit, ist unverwundbar. */
