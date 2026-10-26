@@ -37,6 +37,7 @@ Eine Durchspielzeit von etwa **3–5 Stunden** `[Vorgabe]`, mit Wiederspielwert 
 
 Treffer-Toleranz: Gegner lassen sich mit einem Rand von 16 px sicher antippen. Taps auf HUD-Elemente lösen nie Bewegung aus.
 Mehrfingerbedienung: Laufen und Fähigkeiten gleichzeitig. Zusätzlich eine kleinere **Trank-Taste** in der Mitte des Tastenfächers `[Umgesetzt]`.
+Links oben im HUD: Rucksack (`I`), Talente (`T`), Ton (`M`) und **Einstellungen**; unten links nur in der Schwerelosigkeit „Stabilisieren“ (Leertaste).
 
 ## 4. Spielschleife
 
@@ -182,7 +183,7 @@ Bereiche (im Dungeon: ganze Räume) sind als schwerelos markiert, erkennbar am *
 - **Gegner** steuern ihr Tempo nach (kein Rutschen ins Leere), bremsen im Stand von selbst leicht, treiben aber nach Stößen und Betäubung frei weiter. Schützen weichen per Schub zurück.
 - **Übergang:** Beim Betreten nimmt die Figur ihre Laufgeschwindigkeit mit, beim Verlassen ist der Schwung sofort weg (Laufbewegung greift wieder). Beim ersten Betreten einer schwerelosen Mission erscheint ein Hinweis.
 - **Kontrolle:** Gürtler-Ausrüstung (Gürtel mit Gürtler-Herkunft, Gürtel-Zusatzwert, Gürtler-Set) und Naomis Talente (Ingenieurin) verbessern Schub und Bremse (Wert „Kontrolle“, +Prozent auf beides).
-- **Im Dungeon:** Nur Kampf- und Schatzräume können schwerelos sein, nie Start- oder Ausgangsraum (Wahrscheinlichkeit 18 % in Akt 1, `ZEROG.roomChance`; Akt 2 erhöht sie). Die Karte selbst hängt nicht davon ab (gleiche Seeds, gleiche Räume).
+- **Im Dungeon:** Nur Kampf- und Schatzräume können schwerelos sein, nie Start- oder Ausgangsraum (außer dem Bossraum, wenn der Akt es verlangt). Anteil je Akt in `data/acts.ts`: 18 % / 40 % / 30 %. Die Karte selbst hängt nicht davon ab (gleiche Seeds, gleiche Räume).
 - Zum Ausprobieren: `?seed=7&zerog=1` macht jeden Kampf- und Schatzraum schwerelos, `&zerog=0` keinen.
 
 **Entscheidung (statt „Autopilot“):** direkte Steuerung mit Stabilisieren-Taste und kleiner Angriffshilfe; ein Autopilot nähme dem Modus die Eigenart. Bei Tests auf dem Tablet bitte darauf achten, ob das Gleiten zu rutschig oder zu zahm wirkt (Dämpfung, Höchsttempo, Rückstoßwerte sind Zahlen in `core/zerog.ts` bzw. `config/constants.ts`).
@@ -222,12 +223,13 @@ Gegner werden mit der Spielerstufe etwas stärker (+6 % Leben, +4 % Schaden je S
 
 ## 10. Fortschritt `[Vorgabe]`, Zahlen `[Vorschlag]`
 
-- Level 1–30; ca. 10 Level pro Akt. Pro Level ein Talentpunkt ab Level 2 (Talente: Meilenstein 6).
-- Erfahrung für die nächste Stufe: `30 + 20·Stufe + 3·Stufe²`; Stufenaufstieg heilt vollständig. Schläger 15 EP, Schütze 20 EP, Brecher 80 EP `[Umgesetzt, Startwerte]`.
+- Level 1–30. Pro Level ein Talentpunkt ab Level 2 (Talente: Meilenstein 6). **Tempo des Aufstiegs** `[Umgesetzt, Meilenstein 11]`: Wer je Akt die nötigen 3 Aufträge vollständig räumt und den Boss besiegt, steht am Ende von Akt 1 auf etwa **Stufe 9**, von Akt 2 auf **14**, von Akt 3 auf **19** (Simulation über je 40 Seeds, siehe `tests/core/balance.test.ts`). Dazu geben spätere Akte mehr Erfahrung je Gegner (`xpFactor` 1 / 1,7 / 2,15 in `data/acts.ts`), und die empfohlene Stufe der Karten (`baseLevel`: 1 / 9 / 14) folgt daraus. Bis Stufe 30 kommt man durch Wiederholen und die schweren Aufträge.
+- Erfahrung für die nächste Stufe: `30 + 20·Stufe + 3·Stufe²`; Stufenaufstieg heilt vollständig. Gegnerwerte: siehe Abschnitt 6 (z. B. Schläger 15 EP, Schütze 20 EP, Brecher 80 EP, Bosse 400–520 EP) `[Umgesetzt, Startwerte]`.
+- **Balancing-Leitplanken** `[Umgesetzt, Meilenstein 11]` (als Tests, `tests/core/balance.test.ts`, Figur ohne Ausrüstung als schlechtester Fall): reguläre Gegner fallen im Grundangriff in höchstens 6 s, Elite in 6–26 s, Bosse in 25–65 s; kein Einzeltreffer (auch Sturmangriff ×1,4) über ein Drittel der Leben der schwächsten Figur; die durchschnittliche Schadensrate eines Bosses würde Amos in 12–70 s töten (Ausweichen entscheidet). Wer Zahlen ändert, hält diese Bereiche ein oder passt den Test mit Begründung an.
 - Tränke: 3 pro Mission, heilen 40 % der maximalen Lebenspunkte, 4 s Abklingzeit `[Umgesetzt]`.
 - **Talentbaum** `[Umgesetzt, Meilenstein 6]`: je Klasse **3 Zweige × 4 Reihen** (12 Knoten). Reihe 1–3 haben je 3 Ränge, Reihe 4 (Spitze) einen Rang. Eine Reihe schaltet sich frei, wenn im Zweig genug Punkte stecken (3 / 6 / 9). Insgesamt 30 Ränge für 29 Punkte bis Stufe 30, also eine echte Auswahl. Effekte: Werte (Leben, Schaden, Panzerung, Krit., Tempo, Tränke …) und Verbesserungen der eigenen Fähigkeiten (kürzere Abklingzeit, mehr Wirkung/Bereich/Dauer). Beschreibungen entstehen aus den Zahlen.
 - **Zurücksetzen** kostet `25 × Stufe` Credits und geht nur im Hub. Ungenutzte Punkte zeigt die Talent-Taste (neben dem Rucksack) als Zahl.
-- Schwierigkeit skaliert pro Akt; kein Level-Grind nötig, Wiederholen früherer Missionen bleibt möglich.
+- Schwierigkeit skaliert mit der Stufe der Figur (Gegner +6 % Leben und +4 % Schaden je Stufe) und pro Akt über neue Gegner; kein Level-Grind nötig, Wiederholen früherer Missionen bleibt möglich.
 
 ## 11. Hub: Die Rocinante `[Vorgabe]`
 
@@ -266,6 +268,14 @@ Umgesetzt `[Umgesetzt, Meilenstein 4]`:
 - Ton startet nach der ersten Bedienung (Browser-Regel) und pausiert, wenn die App in den Hintergrund geht. **Stummschalten:** Lautsprecher-Taste im HUD oder Taste `M`; die Wahl bleibt gespeichert.
 - Echte Klänge und Musik kommen später (Meilenstein 11); sie ersetzen nur `src/audio/engine.ts`.
 
+## 12b. Einstellungen, Einführung, Leistung `[Umgesetzt, Meilenstein 11]`
+
+- **Einstellungen** (Fenster über Titelseite und HUD-Taste, Gerät-weit gespeichert, nicht im Spielstand): Ton an/aus, Lautstärke von Musik und Effekten (10-%-Schritte), **Grafik** *Hoch* (Pixelverhältnis bis 2) oder *Sparsam* (höchstens 1: deutlich weniger Füllrate auf älteren Tablets, wirkt sofort), **Bildschirmwackeln** an/aus (Barrierefreiheit), **Hinweise im Spiel** an/aus, **Große Bedienelemente** (HUD ×1,25).
+- **Einführung ohne Pflichtteil:** kurze Hinweise im Spiel, die jeder Spielstand genau einmal sieht: Steuerung (erste Mission), rote Gefahrenzonen (erster Gegnerangriff), Beute, Talentpunkte, niedrige Leben (Trank), Wucherung, Boss. Sie erscheinen in der Sprechblase mit dem Sprecher „Tipp“ (`MISSION_EVENTS.tip`); die Spielstandliste `tips` merkt sich die gesehenen.
+- **Leistung:** 60 fps sind das Ziel für ein mittleres Tablet; Geräte darunter stellen „Sparsam“ ein. Gemessen wurde bisher nur im Headless-Browser mit Software-Rendering (um 20 fps, nicht aussagekräftig); die Hot Spots (Pfadsuche, Nebel, Texte) sind sparsam gebaut. **Echte Tablet-Messungen stehen aus.**
+- **Browser-Rauchtest** in der CI (`scripts/smoke.cjs`): Titel, Hub, Mission, Bewegung, Fähigkeit, Tippen auf Gegner, Service Worker, Offline-Neustart, keine Konsolenfehler.
+- **Als App verpacken** (optional): `docs/CAPACITOR.md`, noch nicht auf Geräten getestet.
+
 ## 13. Nicht-Ziele
 
 Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwischensequenzen.
@@ -279,3 +289,4 @@ Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwisc
 5. ~~Hosting für den Tablet-Test~~ `[Entschieden]` GitHub Pages (siehe README).
 6. **Titel:** „Roci Crawler“ ist ein Arbeitstitel.
 7. ~~Audio: ab wann Platzhalter-Effekte und Musik?~~ `[Entschieden, bitte bestätigen]` synthetisierte Platzhalter ab Meilenstein 8 (Abschnitt 12a).
+8. **Balancing** `[Meilenstein 11]`: Die Zahlen sind per Simulation und Leitplanken-Tests abgestimmt, aber noch nicht auf einem Tablet gespielt; Rückmeldung zu Tempo des Aufstiegs, Härte der Bosse und Gefühl der Schwerelosigkeit ist willkommen.

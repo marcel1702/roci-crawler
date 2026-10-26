@@ -1,4 +1,5 @@
 
+import { shake } from '../platform/effects';
 import { rayDistance } from '../core/collision';
 import { densestPoint, distanceToSegment } from '../core/math';
 import type { Vec2 } from '../core/math';
@@ -58,7 +59,7 @@ const raketensalve: AbilityDef = {
         launchRocket(ctx, impact, SALVO.flightMs, () => {
           world.combat.ring(impact.x, impact.y, radius, 0xffb347, 260);
           world.combat.areaDamage(player, impact.x, impact.y, radius, SALVO.damageMultiplier * (1 + boost.damage), world.enemies, 0, SALVO.knockback);
-          player.scene.cameras.main.shake(80, 0.004);
+          shake(player.scene, 80, 0.004);
         });
       });
     }
@@ -117,7 +118,7 @@ const gauss: AbilityDef = {
     beam.lineStyle(7, PURPLE, 0.35).lineBetween(player.x, player.y, ex, ey);
     beam.lineStyle(3, 0xffffff, 0.95).lineBetween(player.x, player.y, ex, ey);
     scene.tweens.add({ targets: beam, alpha: 0, duration: 220, onComplete: () => beam.destroy() });
-    scene.cameras.main.shake(100, 0.006);
+    shake(scene, 100, 0.006);
     return true;
   },
 };

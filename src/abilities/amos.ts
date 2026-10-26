@@ -1,3 +1,4 @@
+import { shake } from '../platform/effects';
 import { COLORS } from '../config/palette';
 import { edgeDistance } from '../core/combat';
 import type { Enemy } from '../entities/Enemy';
@@ -39,7 +40,7 @@ const rammbock: AbilityDef = {
       world.combat.attack(player, enemy, RAMMBOCK.damageMultiplier * (1 + boost.damage), RAMMBOCK.knockback);
       enemy.stun(RAMMBOCK.stunMs);
       world.combat.ring(enemy.x, enemy.y, 34, COLORS.accent, 220);
-      player.scene.cameras.main.shake(110, 0.006);
+      shake(player.scene, 110, 0.006);
     });
     return true;
   },
@@ -76,7 +77,7 @@ const gnadenloserSchlag: AbilityDef = {
       enemy.stun(SCHLAG.stunMs);
     }
     world.combat.ring(player.x, player.y, radius + player.radius, 0xffffff, 300);
-    player.scene.cameras.main.shake(130, 0.008);
+    shake(player.scene, 130, 0.008);
     return true;
   },
 };

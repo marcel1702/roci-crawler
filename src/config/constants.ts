@@ -37,6 +37,7 @@ export const SCENE_KEYS = {
   talents: 'TalentScene',
   missionSelect: 'MissionSelectScene',
   ending: 'EndingScene',
+  settings: 'SettingsScene',
 } as const;
 
 export const REGISTRY_KEYS = {
@@ -76,6 +77,8 @@ export const MISSION_EVENTS = {
   bossEngaged: 'mission:boss-engaged',
   /** Ein Boss wechselt in die zweite Phase. Payload: Enemy. */
   bossEnraged: 'mission:boss-enraged',
+  /** Ein Einführungshinweis wird fällig. Payload: `TipId`. */
+  tip: 'mission:tip',
 } as const;
 
 /** Schlüssel des Spielstands (`Profile`) im Registry: Fortschritt, Credits, Gegenstände. */

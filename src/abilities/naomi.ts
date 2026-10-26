@@ -1,3 +1,4 @@
+import { shake } from '../platform/effects';
 import { edgeDistance } from '../core/combat';
 import type { Enemy } from '../entities/Enemy';
 import type { Player } from '../entities/Player';
@@ -69,7 +70,7 @@ const emp: AbilityDef = {
     const hits = world.combat.areaDamage(player, player.x, player.y, radius, EMP.damageMultiplier * (1 + boost.damage), world.enemies, EMP.stunMs, EMP.knockback);
     if (hits === 0) return false;
     world.combat.ring(player.x, player.y, radius + player.radius, CYAN, 340);
-    player.scene.cameras.main.shake(110, 0.005);
+    shake(player.scene, 110, 0.005);
     return true;
   },
 };

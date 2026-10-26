@@ -18,8 +18,10 @@ export interface ActDef {
   /** Der Bossraum ist schwerelos. */
   bossRoomZeroG: boolean;
   tileset: Tileset;
-  /** Empfohlene Stufe der ersten Aufträge dieses Akts (Anzeige auf den Karten). */
+  /** Empfohlene Stufe der ersten Aufträge dieses Akts (Anzeige auf den Karten); entspricht etwa der Stufe nach den vorigen Akten. */
   baseLevel: number;
+  /** Faktor auf die Erfahrung aus Gegnern dieses Akts, damit die Stufen über die Akte gleichmäßig wachsen. */
+  xpFactor: number;
 }
 
 export const ACTS: readonly ActDef[] = [
@@ -33,6 +35,7 @@ export const ACTS: readonly ActDef[] = [
     bossRoomZeroG: false,
     tileset: 'ceres',
     baseLevel: 1,
+    xpFactor: 1,
   },
   {
     id: 2,
@@ -43,7 +46,8 @@ export const ACTS: readonly ActDef[] = [
     infectionChance: 0.35,
     bossRoomZeroG: true,
     tileset: 'eros',
-    baseLevel: 7,
+    baseLevel: 9,
+    xpFactor: 1.7,
   },
   {
     id: 3,
@@ -54,7 +58,8 @@ export const ACTS: readonly ActDef[] = [
     infectionChance: 0.25,
     bossRoomZeroG: false,
     tileset: 'ganymede',
-    baseLevel: 13,
+    baseLevel: 14,
+    xpFactor: 2.15,
   },
 ];
 

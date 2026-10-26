@@ -1,9 +1,12 @@
 import type Phaser from 'phaser';
 import { MAX_DEVICE_PIXEL_RATIO, REGISTRY_KEYS } from '../config/constants';
 import { clamp } from '../core/math';
+import { getSettings, onSettingsChange } from './settingsRuntime';
 
+/** Pixelverhältnis der Spielfläche: das des Geräts, höchstens 2; bei sparsamer Grafik höchstens 1. */
 export function currentPixelRatio(): number {
-  return clamp(window.devicePixelRatio || 1, 1, MAX_DEVICE_PIXEL_RATIO);
+  const max = getSettings().quality === 'low' ? 1 : MAX_DEVICE_PIXEL_RATIO;
+  return clamp(window.devicePixelRatio || 1, 1, max);
 }
 
 /** Größe der Spielfläche in Geräte-Pixeln für einen CSS-Container. */
@@ -33,13 +36,16 @@ export function startHiDpiScaling(game: Phaser.Game, container: HTMLElement): vo
     lastKey = key;
 
     game.registry.set(REGISTRY_KEYS.devicePixelRatio, dpr);
-    game.scale.setZoom(1 / dpr);
+    // Erst die Größe, dann der Zoom: Der Zoom berechnet die CSS-Größe des Canvas aus der aktuellen Spielgröße.
     game.scale.resize(width, height);
+    game.scale.setZoom(1 / dpr);
   };
 
   new ResizeObserver(apply).observe(container);
   window.addEventListener('resize', apply);
   window.addEventListener('orientationchange', apply);
+  // Wechsel der Grafikqualität wirkt sofort.
+  onSettingsChange(apply);
   if (game.isBooted) apply();
   else game.events.once('ready', apply);
 }

@@ -33,6 +33,26 @@ jobs:
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
 
+      # Rauchtest der gebauten App im Browser: Titel, Hub, Mission, Bewegung, Fähigkeit, Service Worker, Offline-Neustart.
+      - name: Browser-Rauchtest
+        env:
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+          npx vite preview --port 4173 &
+          for i in $(seq 1 30); do curl -sf "http://localhost:4173/${REPO}/" > /dev/null && break; sleep 1; done
+          node scripts/smoke.cjs "http://localhost:4173/${REPO}/" smoke-out
+
+      - name: Screenshots des Rauchtests sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rauchtest
+          path: smoke-out
+          if-no-files-found: ignore
+          retention-days: 7
+
       # Deployt wird nur ein Push auf den Default-Branch (Pull Requests und andere Branches nur prüfen).
       - id: target
         run: |

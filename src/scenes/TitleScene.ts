@@ -120,6 +120,13 @@ export class TitleScene extends PanelScene {
     }
 
     cards.forEach((rect, i) => this.drawSlotCard(rect, i + 1, summaries[i] ?? null, last === i + 1));
+    this.button({ x: W - 150 * u - 12 * u, y: 12 * u, w: 150 * u, h: 34 * u }, t('settings.open'), 0x232c47, '#9fb0d0', () => this.openSettings(), 13);
+  }
+
+  /** Öffnet die Einstellungen über der Titelseite (die Titelseite pausiert, solange sie offen sind). */
+  private openSettings(): void {
+    this.scene.pause();
+    this.scene.launch(SCENE_KEYS.settings, { parent: SCENE_KEYS.title });
   }
 
   private drawSlotCard(rect: Rect, slot: number, summary: SlotSummary | null, isLast: boolean): void {

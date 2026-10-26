@@ -1,8 +1,9 @@
+import { shake } from '../platform/effects';
 import Phaser from 'phaser';
 import { audio } from '../audio';
 import { ABILITIES } from '../abilities';
 import type { AbilityDef } from '../abilities';
-import { GAME_EVENTS, INFECTION, POTION, TAP, TEXTURE_SCALE, ZEROG, actorTextureKey } from '../config/constants';
+import { GAME_EVENTS, INFECTION, MISSION_EVENTS, POTION, TAP, TEXTURE_SCALE, ZEROG, actorTextureKey } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { hasLineOfSight } from '../core/collision';
 import { edgeDistance, isInReach } from '../core/combat';
@@ -27,6 +28,8 @@ const CHASE_REPATH_SECONDS = 0.2;
 const RAM_CONTACT = 4;
 const GHOST_INTERVAL_S = 0.035;
 const STABILIZE_COLOR = 0x9fd8ff;
+/** Unter diesem Lebensanteil kommt (einmalig) der Hinweis auf den Trank. */
+const LOW_HP_TIP = 0.4;
 
 export interface AbilitySlot {
   def: AbilityDef;
@@ -257,6 +260,7 @@ export class Player extends Actor {
     this.profile.touch();
     audio.play('levelUp');
     this.world.combat.ring(this.x, this.y, 50, 0xffd34d, 450);
+    if (this.talentPoints > 0) this.scene.events.emit(MISSION_EVENTS.tip, 'talents');
     this.world.combat.floatText(this.x, this.y - this.radius - 20, t('hud.levelUp', { level }), COLORS.elite, 15);
     this.scene.game.events.emit(GAME_EVENTS.playerLevelUp, level);
   }
@@ -266,6 +270,7 @@ export class Player extends Actor {
     this.tickTimers(dt);
     this.potionCooldown.update(dt * 1000);
     this.brakeCooldown.update(dt * 1000);
+    if (this.potions > 0 && this.hp < this.stats.maxHp * LOW_HP_TIP) this.scene.events.emit(MISSION_EVENTS.tip, 'potion');
     this.brakeMs = Math.max(0, this.brakeMs - dt * 1000);
     this.braking = this.brakeMs > 0;
     this.tickInfection(dt);
@@ -336,6 +341,7 @@ export class Player extends Actor {
       return;
     }
     this.slow(INFECTION.tileSlow, 250);
+    this.scene.events.emit(MISSION_EVENTS.tip, 'infection');
     this.infectionMs -= dt * 1000;
     if (this.infectionMs > 0) return;
     this.infectionMs = INFECTION.tickMs;
@@ -357,7 +363,7 @@ export class Player extends Actor {
   }
 
   protected override onBump(speed: number): void {
-    this.scene.cameras.main.shake(70, Math.min(0.006, 0.0015 + speed / 90000));
+    shake(this.scene, 70, Math.min(0.006, 0.0015 + speed / 90000));
   }
 
   private tickBuffs(dt: number): void {

@@ -1,3 +1,4 @@
+import { shake } from '../platform/effects';
 import Phaser from 'phaser';
 import { audio } from '../audio';
 import { CRIT_MULTIPLIER, KNOCKBACK, MISSION_EVENTS } from '../config/constants';
@@ -105,7 +106,7 @@ export class CombatSystem {
     if (!quiet) audio.play(target.team === 'player' ? 'hurt' : 'hit');
     const color = target.team === 'player' ? COLORS.damageTaken : crit ? COLORS.crit : COLORS.damage;
     this.floatText(target.x, target.y - target.radius - 6, crit ? `${dealt}!` : String(dealt), color, crit ? 17 : 13);
-    if (target.team === 'player' && !quiet) this.scene.cameras.main.shake(90, 0.004);
+    if (target.team === 'player' && !quiet) shake(this.scene, 90, 0.004);
 
     if (source && !source.isDead && source.lifesteal > 0 && target.team !== source.team) {
       const healed = source.heal(dealt * source.lifesteal);

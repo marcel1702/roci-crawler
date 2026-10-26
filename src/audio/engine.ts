@@ -1,5 +1,4 @@
-import { DEFAULT_SETTINGS } from '../core/settings';
-import type { Settings } from '../core/settings';
+import { getSettings, onSettingsChange, updateSettings } from '../platform/settingsRuntime';
 
 export type SfxName =
   | 'hit'
@@ -59,7 +58,6 @@ const CHORDS: Record<Exclude<MusicMode, 'off'>, number[]> = {
  * ersten Bedienung (Browser-Regel) und läuft ohne Unterstützung still weiter.
  */
 export class AudioEngine {
-  private settings: Settings = { ...DEFAULT_SETTINGS };
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private sfxBus: GainNode | null = null;
@@ -69,12 +67,14 @@ export class AudioEngine {
   private mode: MusicMode = 'off';
   private musicNodes: { stop: () => void } | null = null;
   private pulseTimer: ReturnType<typeof setInterval> | null = null;
-  private onChange: ((settings: Settings) => void) | null = null;
 
-  /** Übernimmt gespeicherte Einstellungen und wartet auf die erste Bedienung. */
-  init(settings: Settings, onChange: (settings: Settings) => void): void {
-    this.settings = { ...settings };
-    this.onChange = onChange;
+  private get settings() {
+    return getSettings();
+  }
+
+  /** Wartet auf die erste Bedienung und folgt den Einstellungen (Ton, Lautstärken). */
+  init(): void {
+    onSettingsChange(() => this.applyVolumes());
     const unlock = (): void => {
       this.ensure();
       for (const event of ['pointerdown', 'keydown', 'touchend']) window.removeEventListener(event, unlock, true);
@@ -96,9 +96,7 @@ export class AudioEngine {
   }
 
   setMuted(muted: boolean): void {
-    this.settings = { ...this.settings, muted };
-    this.applyVolumes();
-    this.onChange?.(this.settings);
+    updateSettings({ muted });
   }
 
   toggleMuted(): boolean {

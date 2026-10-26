@@ -1,0 +1,12 @@
+{
+  "appId": "de.rocicrawler.app",
+  "appName": "Roci Crawler",
+  "webDir": "dist",
+  "backgroundColor": "#0b1020",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}

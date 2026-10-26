@@ -3,6 +3,7 @@ import type { EquippedItems } from './inventory';
 import { EMPTY_MODS, ORIGINS, RARITIES, SLOTS } from './items';
 import type { Affix, Item, ItemRules, LegendaryId, StatKey } from './items';
 import { MAX_LEVEL, Progression } from './progression';
+import { isTipId } from './tips';
 import { Wallet } from './wallet';
 
 export const SAVE_VERSION = 1;
@@ -21,6 +22,8 @@ export interface SaveData {
   actMissions?: number;
   /** Der Abspann nach dem letzten Akt wurde gesehen. */
   endingSeen?: boolean;
+  /** Kennungen der gezeigten Einführungshinweise. */
+  tips?: string[];
   /** Verteilte Talentpunkte: Talent-Kennung -> Rang. */
   talents?: Record<string, number>;
   /** Kennungen der Gegenstände, die im aktuellen Angebot des Händlers schon gekauft wurden. */
@@ -44,6 +47,7 @@ export class Profile {
   actsCleared = 0;
   actMissions = 0;
   endingSeen = false;
+  readonly tipsSeen = new Set<string>();
   readonly shopBought = new Set<string>();
   /** Talent-Kennung -> Rang. Wird beim Laden nicht geprüft; der Spieler prüft gegen den Baum seiner Klasse. */
   talents: Record<string, number> = {};
@@ -65,6 +69,13 @@ export class Profile {
   /** Meldet, dass sich etwas geändert hat. */
   touch(): void {
     this.onChange?.();
+  }
+
+  /** Merkt sich, dass der Hinweis gezeigt wurde. Liefert true, wenn er neu war (und nun gezeigt werden soll). */
+  markTip(id: string): boolean {
+    if (this.tipsSeen.has(id)) return false;
+    this.tipsSeen.add(id);
+    return true;
   }
 
   /**
@@ -93,6 +104,7 @@ export class Profile {
       actsCleared: this.actsCleared,
       actMissions: this.actMissions,
       endingSeen: this.endingSeen,
+      tips: [...this.tipsSeen],
       shopBought: [...this.shopBought],
       talents: { ...this.talents },
       bag: [...this.inventory.bag],
@@ -125,6 +137,9 @@ export function parseProfile(raw: unknown, rules: ItemRules): ParseResult {
   profile.actsCleared = clampInt(raw.actsCleared, 0, 3, 0);
   profile.actMissions = clampInt(raw.actMissions, 0, 1000, 0);
   profile.endingSeen = raw.endingSeen === true;
+  if (Array.isArray(raw.tips)) {
+    for (const id of raw.tips) if (isTipId(id)) profile.tipsSeen.add(id);
+  }
   if (isRecord(raw.talents)) {
     for (const [id, rank] of Object.entries(raw.talents)) {
       if (typeof rank === 'number' && Number.isFinite(rank) && rank > 0) profile.talents[id] = Math.floor(rank);

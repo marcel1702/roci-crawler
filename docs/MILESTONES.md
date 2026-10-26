@@ -15,7 +15,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **8** | Akt 1: Ceres/Tycho ✅ | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
 | **9** | Akt 2: Eros ✅ | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
 | **10** | Akt 3: Ganymed/Ringtore ✅ | Hybrid-Soldaten, Finale am Ringtor, Abspann | Das gesamte Spiel ist in 3–5 Stunden durchspielbar | L |
-| **11** | Politur & Release | Balancing, Audio, Einführung/Tutorial, Performance auf schwachen Geräten, Barrierefreiheit, optional Capacitor-Pakete (iOS/Android) | Spielbare Fassung ohne bekannte Blocker auf Zielgeräten | L |
+| **11** | Politur & Release ✅ | Balancing, Audio, Einführung/Tutorial, Performance auf schwachen Geräten, Barrierefreiheit, optional Capacitor-Pakete (iOS/Android) | Spielbare Fassung ohne bekannte Blocker auf Zielgeräten | L |
 
 ## Querschnittsthemen (laufend)
 
@@ -131,5 +131,17 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitt 6):
 - **Abspann** (`scenes/EndingScene`): fünf Erzählseiten, Dank, Hinweis auf das Fanprojekt, Rückweg zur Rocinante; läuft einmal nach dem letzten Boss (`Profile.endingSeen`, additiv gespeichert), `?ending` zum Testen; Titelkarte zeigt „Akte n/3“.
 - Tests: Gegnerdaten und Spawn-Tabellen aller drei Akte, Boss-Dungeons, Abspann-Texte (Seitenzahl passt zur Szene), `endingSeen` im Spielstand; Browser-Durchlauf Akt-3-Mission, Gegner, Bosskampf bis zum Abspann und zurück in den Hub.
 
-Bewusst **nicht** enthalten: Zwischensequenzen mit Animation, wiederholbarer Abspann im Hub (nur `?ending`), echte Klänge/Musik, Balancing (Meilenstein 11).
+Bewusst **nicht** enthalten: Zwischensequenzen mit Animation, wiederholbarer Abspann im Hub (nur `?ending`), echte Klänge/Musik.
+
+## Meilenstein 11: Umfang im Detail
+
+Umgesetzt (Details: GDD, Abschnitte 10 und 12b):
+- **Balancing:** Erfahrungsfaktor je Akt (`xpFactor`), Grundstufen angepasst, Infizierte etwas entschärft; **Leitplanken-Tests** (`tests/core/balance.test.ts`) halten Aufstiegstempo (Stufe ≈ 9 / 14 / 19 nach den Akten), Kampfdauer und Gefahr in Bereichen.
+- **Einstellungen** (`scenes/SettingsScene`, `platform/settingsRuntime`): Ton, Lautstärken, Grafik *Sparsam* (Pixelverhältnis ≤ 1, wirkt sofort; dabei Fehler in `hidpi.ts` behoben: erst Größe, dann Zoom), Bildschirmwackeln aus (`platform/effects.shake`), Hinweise aus, große Bedienelemente (HUD ×1,25).
+- **Einführung:** einmalige Hinweise je Spielstand (`core/tips.ts`, `Profile.tipsSeen`, Sprechblase „Tipp“), abschaltbar.
+- **Browser-Rauchtest** in der CI (`scripts/smoke.cjs`, Playwright, gebaute App mit `?debug`), Screenshots als Artefakt.
+- **Capacitor-Vorbereitung** (`capacitor.config.json`, `docs/CAPACITOR.md`), ohne zusätzliche Abhängigkeiten.
+- Tests: Einstellungen, Hinweise, Balancing; Browser-Prüfung von Einstellungen (Quer-/Hochformat), Hinweisen und dem Rauchtest.
+
+Offen für spätere Arbeit (nicht Teil dieser Meilensteine): Messung und Optimierung auf einem echten Tablet, echte Grafik/Klänge, native Builds testen, Inhalte jenseits des Abspanns (weitere Aufträge, Endlos-Modus).
 

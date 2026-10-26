@@ -1,3 +1,4 @@
+import { shake } from '../platform/effects';
 import Phaser from 'phaser';
 import { audio } from '../audio';
 import {
@@ -24,6 +25,8 @@ import type { TileGrid } from '../core/grid';
 import { parseLevel } from '../core/level';
 import { rollItem } from '../core/items';
 import { IMPLEMENTED_ACTS } from '../core/story';
+import type { TipId } from '../core/tips';
+import { getSettings } from '../platform/settingsRuntime';
 import type { Vec2 } from '../core/math';
 import { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
@@ -203,11 +206,13 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.events.on(MISSION_EVENTS.actorKilled, this.onActorKilled, this);
     this.events.on(MISSION_EVENTS.bossEngaged, this.onBossEngaged, this);
     this.events.on(MISSION_EVENTS.bossEnraged, this.onBossEnraged, this);
+    this.events.on(MISSION_EVENTS.tip, this.onTip, this);
     this.game.events.on(GAME_EVENTS.restartRequested, this.restart, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(MISSION_EVENTS.actorKilled, this.onActorKilled, this);
       this.events.off(MISSION_EVENTS.bossEngaged, this.onBossEngaged, this);
       this.events.off(MISSION_EVENTS.bossEnraged, this.onBossEnraged, this);
+      this.events.off(MISSION_EVENTS.tip, this.onTip, this);
       this.game.events.off(GAME_EVENTS.restartRequested, this.restart, this);
     });
     if (!this.scene.isActive(SCENE_KEYS.hud)) this.scene.launch(SCENE_KEYS.hud);
@@ -215,6 +220,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     // Beim ersten Start entsteht das HUD erst im nächsten Bild; die Zeile kommt danach.
     const briefing = this.config.kind === 'dungeon' ? this.config.briefingKey : undefined;
     if (briefing) this.time.delayedCall(BRIEFING_DELAY_MS, () => this.say('say.radio', briefing));
+    this.time.delayedCall(BRIEFING_DELAY_MS + 100, () => this.events.emit(MISSION_EVENTS.tip, 'controls'));
   }
 
   override update(time: number, delta: number): void {
@@ -459,6 +465,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
       itemLevel: this.player.progression.level,
       rarityWeights: boostedWeights(RARITY_WEIGHTS[source], this.difficultyRules().loot),
     });
+    this.events.emit(MISSION_EVENTS.tip, 'loot');
     const offset = LootDrop.randomOffset(this.rng);
     const drop = new LootDrop(this, x + offset.x, y + offset.y, item);
     // Nie in eine Wand fallen lassen.
@@ -492,12 +499,13 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     if (victim.summoned) return;
     audio.play('kill');
     this.stats.kills++;
-    this.stats.xp += victim.def.xp;
-    this.player.gainXp(victim.def.xp);
+    const xp = Math.round(victim.def.xp * this.act.xpFactor);
+    this.stats.xp += xp;
+    this.player.gainXp(xp);
     if (victim.isBoss) this.onBossDefeated(victim);
     else this.dropLoot(this.guardians.has(victim) ? 'guardian' : (victim.def.loot ?? 'enemy'), victim.x, victim.y);
     this.profile().touch();
-    this.combat.floatText(victim.x, victim.y - victim.radius - 18, t('hud.xp', { amount: victim.def.xp }), COLORS.xpText, 12);
+    this.combat.floatText(victim.x, victim.y - victim.radius - 18, t('hud.xp', { amount: xp }), COLORS.xpText, 12);
   }
 
   /** Bossbeute: zwei sichere Gegenstände guter Seltenheit und Credits. */
@@ -511,19 +519,29 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.stats.credits += credits;
     this.combat.floatText(boss.x, boss.y - 36, t('hud.credits', { amount: credits }), COLORS.credits, 15);
     this.combat.ring(boss.x, boss.y, 90, 0xffd34d, 600);
-    this.cameras.main.shake(300, 0.012);
+    shake(this, 300, 0.012);
     if (boss.def.boss) this.say(boss.def.nameKey, boss.def.boss.defeatKey);
   }
 
   private onBossEngaged(boss: Enemy): void {
     audio.play('boss');
     audio.setMusic('boss');
+    this.events.emit(MISSION_EVENTS.tip, 'boss');
     if (boss.def.boss) this.say(boss.def.nameKey, boss.def.boss.introKey);
   }
 
   private onBossEnraged(boss: Enemy): void {
     if (boss.def.enrage) this.say(boss.def.nameKey, boss.def.enrage.lineKey);
-    this.cameras.main.shake(220, 0.008);
+    shake(this, 220, 0.008);
+  }
+
+  /** Zeigt einen Einführungshinweis, wenn Hinweise an sind und dieser Spielstand ihn noch nicht gesehen hat. */
+  private onTip(id: TipId): void {
+    if (!getSettings().hints) return;
+    const profile = this.profile();
+    if (!profile.markTip(id)) return;
+    profile.touch();
+    this.say('say.tip', `tip.${id}` as TextKey);
   }
 
   /** Eine Sprechzeile im HUD (Sprecher und Text als Schlüssel). */

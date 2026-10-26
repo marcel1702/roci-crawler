@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { audio } from '../audio';
+import { LARGE_UI_SCALE } from '../core/settings';
+import { getSettings, onSettingsChange } from '../platform/settingsRuntime';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS, TILE_SIZE } from '../config/constants';
 import { COLORS } from '../config/palette';
 import type { Cooldown } from '../core/cooldown';
@@ -54,6 +56,7 @@ export class HudScene extends Phaser.Scene {
   private talentButton!: AbilityButton;
   private brakeButton!: AbilityButton;
   private soundButton!: AbilityButton;
+  private settingsButton!: AbilityButton;
   private brakeShown = false;
   private hint!: Phaser.GameObjects.Text;
   private banner!: Phaser.GameObjects.Text;
@@ -115,6 +118,8 @@ export class HudScene extends Phaser.Scene {
     this.talentButton.setIcon('talents');
     this.soundButton = new AbilityButton(this, COLORS.uiDim);
     this.soundButton.setIcon(audio.muted ? 'muted' : 'sound');
+    this.settingsButton = new AbilityButton(this, COLORS.uiDim);
+    this.settingsButton.setIcon('settings');
     this.brakeButton = new AbilityButton(this, 0x9fd8ff);
     this.brakeButton.setIcon('brake');
     this.brakeButton.setVisible(false);
@@ -143,6 +148,7 @@ export class HudScene extends Phaser.Scene {
 
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
+    const stopSettings = onSettingsChange(() => this.layout());
     this.input.on(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
     this.input.keyboard?.on('keydown-I', this.openInventory, this);
     this.input.keyboard?.on('keydown-T', this.openTalents, this);
@@ -160,6 +166,7 @@ export class HudScene extends Phaser.Scene {
     on.on(GAME_EVENTS.say, this.onSay, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
+      stopSettings();
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
       this.input.keyboard?.off('keydown-I', this.openInventory, this);
       this.input.keyboard?.off('keydown-T', this.openTalents, this);
@@ -249,7 +256,7 @@ export class HudScene extends Phaser.Scene {
   /** True, wenn ein Bildschirmpunkt auf einem Bedienelement liegt (Tipp darf dann nicht laufen lassen). */
   isOverUi(screenX: number, screenY: number): boolean {
     const pad = 10 * this.u;
-    const common = [this.bagButton, this.talentButton, this.soundButton];
+    const common = [this.bagButton, this.talentButton, this.soundButton, this.settingsButton];
     const buttons = this.world === 'hub' ? common : [...this.abilityButtons, this.potionButton, this.brakeButton, ...common];
     return buttons.some((button) => button.contains(screenX, screenY, pad));
   }
@@ -272,6 +279,11 @@ export class HudScene extends Phaser.Scene {
     if (this.soundButton.contains(pointer.x, pointer.y, pad)) {
       this.soundButton.press();
       audio.toggleMuted();
+      return;
+    }
+    if (this.settingsButton.contains(pointer.x, pointer.y, pad)) {
+      this.settingsButton.press();
+      this.openSettings();
       return;
     }
     if (this.world === 'hub') return;
@@ -302,7 +314,7 @@ export class HudScene extends Phaser.Scene {
 
   /** True, solange Rucksack, Händler oder Auftragswahl offen sind: dann gehören alle Tipps dem Fenster. */
   private overlayOpen(): boolean {
-    return [SCENE_KEYS.inventory, SCENE_KEYS.shop, SCENE_KEYS.missionSelect, SCENE_KEYS.talents].some((key) => this.scene.isActive(key));
+    return [SCENE_KEYS.inventory, SCENE_KEYS.shop, SCENE_KEYS.missionSelect, SCENE_KEYS.talents, SCENE_KEYS.settings].some((key) => this.scene.isActive(key));
   }
 
   /** Öffnet Rucksack und Ausrüstung; die Welt (Hub oder Mission) pausiert, solange er offen ist. */
@@ -315,6 +327,14 @@ export class HudScene extends Phaser.Scene {
 
   private setCombatUi(visible: boolean): void {
     for (const button of [...this.abilityButtons, this.potionButton]) button.setVisible(visible);
+  }
+
+  /** Öffnet die Einstellungen; die Welt pausiert, solange sie offen sind. */
+  private openSettings(): void {
+    if (!this.player || this.locked || this.overlayOpen()) return;
+    const parent = this.world === 'hub' ? SCENE_KEYS.hub : SCENE_KEYS.mission;
+    this.scene.pause(parent);
+    this.scene.launch(SCENE_KEYS.settings, { parent });
   }
 
   /** Öffnet den Talentbaum; die Welt pausiert, solange er offen ist. */
@@ -497,8 +517,9 @@ export class HudScene extends Phaser.Scene {
 
   private layout(): void {
     const dpr = (this.registry.get(REGISTRY_KEYS.devicePixelRatio) as number | undefined) ?? 1;
-    this.u = dpr;
-    const u = dpr;
+    // „Große Bedienelemente“ vergrößert das ganze HUD (Tasten, Leisten, Schrift).
+    const u = dpr * (getSettings().largeUi ? LARGE_UI_SCALE : 1);
+    this.u = u;
     const { width, height } = this.scale;
     const shortCss = Math.min(width, height) / u;
     const safe = readSafeArea();
@@ -523,6 +544,7 @@ export class HudScene extends Phaser.Scene {
     this.bagButton.layout(left + bagR, bagY, bagR);
     this.talentButton.layout(left + bagR * 3 + 8 * u, bagY, bagR);
     this.soundButton.layout(left + bagR * 5 + 16 * u, bagY, bagR * 0.8);
+    this.settingsButton.layout(left + bagR * 7 + 12 * u, bagY, bagR * 0.8);
 
     // Ziel: oben Mitte
     const targetW = clamp(shortCss * 0.5, 160, 260) * u;

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { AbilityIcon } from '../abilities';
 import { COLORS } from '../config/palette';
 
-export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents' | 'brake' | 'sound' | 'muted';
+export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents' | 'brake' | 'sound' | 'muted' | 'settings';
 
 export interface ButtonState {
   /** Verbleibender Anteil der Abklingzeit, 1 = gerade ausgelöst, 0 = bereit. */
@@ -226,6 +226,14 @@ export class AbilityButton {
           const tipX = x + dx * r * 0.3;
           const tipY = y + dy * r * 0.3;
           g.fillTriangle(tipX, tipY, x + dx * r * 0.62 + px * r * 0.17, y + dy * r * 0.62 + py * r * 0.17, x + dx * r * 0.62 - px * r * 0.17, y + dy * r * 0.62 - py * r * 0.17);
+        }
+        break;
+      }
+      case 'settings': {
+        // Drei Regler.
+        for (const [dy, dx] of [[-0.3, -0.18], [0, 0.2], [0.3, -0.05]] as const) {
+          g.lineBetween(x - r * 0.5, y + dy * r, x + r * 0.5, y + dy * r);
+          g.fillCircle(x + dx * r, y + dy * r, r * 0.12);
         }
         break;
       }

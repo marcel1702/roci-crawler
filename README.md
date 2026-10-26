@@ -3,7 +3,7 @@
 Diablo-artiges Action-RPG im Universum von *The Expanse*: privates, nicht-kommerzielles Fanprojekt.
 Läuft als Progressive Web App (Phaser 3 + TypeScript + Vite) auf Smartphone und Tablet.
 
-**Stand: Meilenstein 6** – vier spielbare Klassen (Amos, Naomi, Bobbie, Holden) mit je drei Fähigkeiten und Talentbaum, Titelseite mit drei Spielständen, begehbare Rocinante als Hub (Missionskonsole, Waffenkammer, Händler), zufällige Dungeon-Missionen mit Nebel, Truhen, Gegnern (Nahkämpfer, Schützen, Elite), Fähigkeiten, Erfahrung, Beute in fünf Seltenheiten (Herkunft Erde/Mars/Gürtel), Rucksack mit Ausrüstung und automatischem Spielstand.
+**Stand: Meilenstein 11 – komplett durchspielbar (laut Plan etwa 3–5 Stunden).** Vier Klassen (Amos, Naomi, Bobbie, Holden) mit Fähigkeiten und Talentbaum, drei Akte (Ceres/Tycho, Eros, Ganymed/Ringtor) mit je eigenen Gegnern, Bossen, Orten und Texten, zufällige Dungeons mit Nebel, Truhen, Schwerelosigkeit und Wucherung, Beute in fünf Seltenheiten, Rocinante als Hub (Händler, Ausrüstung, Aufträge, Spielstände), Abspann, Platzhalter-Ton, Einstellungen und Einführungshinweise. **Noch nicht auf einem echten Tablet gespielt**; Grafik und Klänge sind Platzhalter.
 Design: [`docs/GDD.md`](docs/GDD.md) · Fahrplan: [`docs/MILESTONES.md`](docs/MILESTONES.md) · Projektregeln: [`CLAUDE.md`](CLAUDE.md)
 
 ## Starten
@@ -30,6 +30,7 @@ diese Adresse im Browser des Tablets öffnen. Rechner und Tablet müssen im selb
 - Ton: Lautsprecher-Taste links oben (oder `M`) schaltet stumm; die Wahl bleibt gespeichert. Der Ton beginnt nach der ersten Berührung.
 - Beute (farbige Kristalle) wird beim Darüberlaufen aufgehoben. Der Rucksack-Knopf links oben (oder Taste `I`) öffnet Ausrüstung und Inventar.
 - Der Spielstand (drei Plätze) wird automatisch im Browser gespeichert. Zum Testen: `?slot=2` lädt/beginnt Platz 2 direkt im Hub, `?reset` beginnt Platz 1 neu.
+- Links oben öffnet das Regler-Symbol die **Einstellungen** (Ton, Grafik „Sparsam“ für ältere Geräte, Bildschirmwackeln, Hinweise, große Bedienelemente).
 - Am Desktop funktioniert die Maus genauso.
 - Zum Ausprobieren: `?seed=123` an die URL hängen lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen, `&zerog=1` macht jeden Kampfraum schwerelos, `&act=3` wählt den Akt, `&boss` stellt dessen Boss in den Ausgangsraum, `?ending` zeigt den Abspann.
 
@@ -64,7 +65,12 @@ ist dann trotzdem öffentlich per URL erreichbar. Wer das nicht möchte, kann `d
 | `npm run preview` | Build lokal ansehen |
 | `npm run check` | Typprüfung und Unit-Tests |
 | `npm test` | Unit-Tests (Vitest) |
+| `npm run smoke` | Browser-Rauchtest gegen `vite preview` (braucht Playwright; läuft auch in der CI) |
 | `npm run icons` | PWA-Icons aus `public/favicon.svg` erzeugen |
+
+## Als App verpacken (optional)
+
+Siehe [`docs/CAPACITOR.md`](docs/CAPACITOR.md) (Android/iOS über Capacitor, noch nicht auf Geräten getestet).
 
 ## Hinweis zu Phaser
 

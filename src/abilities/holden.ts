@@ -1,3 +1,4 @@
+import { shake } from '../platform/effects';
 import { ALLIES } from '../data/allies';
 import type { AbilityDef } from './types';
 import { clusterTarget } from './bobbie';
@@ -29,7 +30,7 @@ const sperrfeuer: AbilityDef = {
         if (player.isDead) return;
         world.combat.ring(x, y, radius, ORANGE, 260);
         world.combat.areaDamage(player, x, y, radius, BARRAGE.damageMultiplier * (1 + boost.damage), world.enemies, 0, BARRAGE.knockback);
-        player.scene.cameras.main.shake(70, 0.004);
+        shake(player.scene, 70, 0.004);
       });
     }
     return true;

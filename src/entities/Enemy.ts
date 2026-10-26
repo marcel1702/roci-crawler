@@ -1,3 +1,4 @@
+import { shake } from '../platform/effects';
 import Phaser from 'phaser';
 import { audio } from '../audio';
 import { KNOCKBACK, MISSION_EVENTS, TAP, TEXTURE_KEYS, TEXTURE_SCALE } from '../config/constants';
@@ -280,6 +281,7 @@ export class Enemy extends Actor {
 
   private beginWindup(player: Player, attack: EnemyAttack): void {
     this.aiState = 'windup';
+    this.scene.events.emit(MISSION_EVENTS.tip, 'telegraph');
     this.current = attack;
     this.windupMs = 0;
     // Die Richtung wird beim Start festgelegt: Ausweichen ist möglich und lohnt sich.
@@ -345,7 +347,7 @@ export class Enemy extends Actor {
       case 'slam':
         combat.ring(this.x, this.y, attack.radius, COLORS.telegraph, 300);
         audio.play('boom');
-        this.scene.cameras.main.shake(this.isBoss ? 220 : 120, this.isBoss ? 0.01 : 0.006);
+        shake(this.scene, this.isBoss ? 220 : 120, this.isBoss ? 0.01 : 0.006);
         if (isInSector(this, 0, Math.PI, player, attack.radius)) combat.attack(this, player, 1, KNOCKBACK.slam);
         break;
       case 'ranged':
@@ -367,7 +369,7 @@ export class Enemy extends Actor {
         combat.ring(x, y, attack.radius, 0xffa24d, 280);
         audio.play('boom');
         combat.areaDamage(this, x, y, attack.radius, 1, [player], 0, KNOCKBACK.slam);
-        this.scene.cameras.main.shake(100, 0.005);
+        shake(this.scene, 100, 0.005);
         break;
       }
       case 'spore':
@@ -423,7 +425,7 @@ export class Enemy extends Actor {
     const wall = moved < step * 0.5;
     if (this.chargeLeft <= 0.01 || wall) {
       this.aiState = 'chase';
-      if (wall) this.scene.cameras.main.shake(160, 0.008);
+      if (wall) shake(this.scene, 160, 0.008);
       this.stun(attack.dizzyMs * (wall ? WALL_DIZZY_FACTOR : 1));
     }
   }
