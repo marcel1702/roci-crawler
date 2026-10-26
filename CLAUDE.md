@@ -35,8 +35,8 @@ src/
                Raster, Kollision, Pfadfindung, Wegverfolgung, Kampfformeln, Werte/Stufen, Geschosse,
                Dungeon-Generator, Begegnungsplanung, Nebel, Gegenstände, Inventar, Spielstand-Format, Zufall (seeded).
   data/        Statische Inhalte (Klassen, Gegner, Level) als typisierte Objekte. Keine Logik, keine Texte.
-  abilities/   Wirkung der Klassenfähigkeiten (Phaser-abhängig), Registry `ABILITIES` je `AbilityId`.
-  entities/    Phaser-Objekte mit Zustand: Actor (Basis), Player, Enemy, Chest, ExitPortal, LootDrop.
+  abilities/   Wirkung der Klassenfähigkeiten, je Klasse eine Datei (Phaser-abhängig), Registry `ABILITIES` je `AbilityId`.
+  entities/    Phaser-Objekte mit Zustand: Actor (Basis), Player, Enemy, Ally (Verbündete), Chest, ExitPortal, LootDrop, Station.
   systems/     Eigenständige Spielsysteme pro Szene: Eingabe (Tippen), Kampf, Geschosse, Kamera, Trennung, Nebel.
   scenes/      Dünn halten. Welten: HubScene, MissionScene. HudScene liegt darüber (Hub- oder Missionsmodus).
                Overlays (pausieren ihre Welt, Daten `{ parent }`): InventoryScene, ShopScene, MissionSelectScene.
@@ -60,7 +60,8 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 
 - **Einheiten:** Längen in Welt-Pixeln (Kachel = 32), Geschwindigkeit in px/s, Zeiten in `core` und Daten in **ms**, in Update-Schleifen `dt` in **Sekunden** (auf 50 ms gedeckelt).
 - **Gegnerangriffe** haben immer eine Ankündigung (`windupMs` + rote Gefahrenzone); neue Gegner folgen dieser Regel (Lesbarkeit, siehe GDD).
-- **Neue Fähigkeit:** Kennung in `AbilityId` (`data/types.ts`), Wirkung in `src/abilities`, Text-Schlüssel `ability.<id>.name`, Eintrag in `ABILITIES`, Belegung in `data/classes.ts`.
+- **Neue Fähigkeit:** Kennung in `AbilityId` (`data/types.ts`), Wirkung in `src/abilities/<klasse>.ts` (bekommt `boost` aus Talenten: Abklingzeit-Verkürzung macht der Spieler, Schaden/Bereich/Dauer die Fähigkeit selbst), Text-Schlüssel `ability.<id>.name`, Symbol in `AbilityIcon` und `ui/AbilityButton`, Eintrag in `ABILITIES`, Belegung in `data/classes.ts`. Verstärkungen über `player.startBuff`, Flächenschaden über `combat.areaDamage`, Verbündete über `world.spawnAlly` (Daten in `data/allies.ts`).
+- **Talente:** Regeln in `core/talents.ts` (rein, getestet), Bäume in `data/talents.ts` (`slot` = Fähigkeiten-Taste 0–2), Namen `talent.<id>`, Beschreibungen werden aus den Zahlen erzeugt (`i18n/talents.ts`). Jede Klasse braucht mehr Ränge als Punkte bis Stufe 30 (Test).
 - **Schaden:** immer über `CombatSystem.dealDamage` (zeigt Zahlen, meldet Todesfälle über `MISSION_EVENTS.actorKilled`), nie direkt `takeDamage`.
 - **Neue Overlay-Fenster** erben von `ui/PanelScene` (Zeichnen in `render()`, Tipps über `hits`), öffnen mit `scene.pause(); scene.launch(key, { parent })` und setzen beim Schließen die Elternszene fort. Das HUD sperrt seine Tasten, solange ein Overlay offen ist (`overlayOpen()`).
 - **Hub:** Stationen sind `Station`-Entities; `HubScene.onWorldTap` bekommt Tipps vor der normalen Bewegung (Hook im `TapControlSystem`). Neue Station: Marker in `data/levels/hub.ts` und `HUB_MARKERS`, Art in `StationKind`, Text-Schlüssel `hub.station.<art>`, Aktion in `HubScene.open`.
@@ -85,7 +86,7 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 ## Tests & Prüfen
 
 - Neue Logik in `src/core` bekommt Vitest-Tests in `tests/core`.
-- URL-Parameter: `?seed=<zahl>` (feste Karte), `?mode=arena` (Testarena), `?slot=<1-3>` (Spielstand laden oder neu beginnen, direkt in den Hub), `?reset` (Platz 1 neu). Ohne Parameter startet die Titelseite. Der Seed steht im Dev-Modus unten links im HUD.
+- URL-Parameter: `?seed=<zahl>` (feste Karte), `?mode=arena` (Testarena), `?slot=<1-3>` (Spielstand laden oder neu beginnen, direkt in den Hub), `?reset` (Platz 1 neu), `?class=<amos|naomi|bobbie|holden>` (Figur bei neuem Spielstand). Ohne Parameter startet die Titelseite. Der Seed steht im Dev-Modus unten links im HUD.
 - Dev-Server stellt `window.__roci` (das Phaser-Spiel) bereit: für Konsole und automatisierte Browser-Tests. Nützlich: `scene.getScene('MissionScene').spawnEnemy('gunner', x, y)`, `.player.useAbility(i)`, `.player.gainXp(n)`.
 - Beim Prüfen im Headless-Browser beachten: Phaser deckelt `delta` in den ersten ~120 Frames nach dem Start auf einen Frame. Vor Bewegungstests ca. 5 s warten.
 - Vor jeder Übergabe: `npm run check` und `npm run build`.

@@ -94,7 +94,7 @@ export abstract class PanelScene extends Phaser.Scene implements PanelCanvas {
         fontStyle: opts.bold ? 'bold' : 'normal',
         color: opts.color ?? '#dbe4f5',
         align: opts.align ?? 'left',
-        wordWrap: opts.wrap ? { width: opts.wrap } : undefined,
+        wordWrap: opts.wrap ? { width: opts.wrap, useAdvancedWrap: true } : undefined,
       })
       .setOrigin(opts.origin[0], opts.origin[1]);
     this.dynamic.push(text);

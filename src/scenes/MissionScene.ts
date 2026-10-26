@@ -27,14 +27,17 @@ import { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
 import type { Rng } from '../core/rng';
 import { CLASSES } from '../data/classes';
+import type { ImplementedClassId } from '../data/classes';
 import { ENEMIES } from '../data/enemies';
 import type { EnemyId } from '../data/enemies';
 import { ITEM_RULES } from '../data/items';
 import { TEST_ARENA, TEST_ARENA_WAVES } from '../data/levels/testArena';
 import { DROP_CHANCE, RARITY_WEIGHTS, boostedWeights } from '../data/loot';
 import { ACT1_SPAWNS } from '../data/spawnTables';
-import type { LootSource } from '../data/types';
+import type { AllyDef, LootSource } from '../data/types';
 import type { Actor, Team } from '../entities/Actor';
+import { Ally } from '../entities/Ally';
+import type { AllyOverrides } from '../entities/Ally';
 import { Chest } from '../entities/Chest';
 import { Enemy } from '../entities/Enemy';
 import type { Difficulty as EnemyDifficulty } from '../entities/Enemy';
@@ -85,6 +88,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   projectiles!: ProjectileSystem;
   player!: Player;
   enemies: Enemy[] = [];
+  allies: Ally[] = [];
   chests: Chest[] = [];
   drops: LootDrop[] = [];
   exitPortal: ExitPortal | null = null;
@@ -112,6 +116,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
 
   create(): void {
     this.enemies = [];
+    this.allies = [];
     this.chests = [];
     this.drops = [];
     this.exitPortal = null;
@@ -128,12 +133,13 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.rng = createRng(Date.now());
     this.combat = new CombatSystem(this, this.rng);
     this.projectiles = new ProjectileSystem(this, this, (team) => this.actorsOf(team));
+    this.combat.projectiles = this.projectiles;
 
     if (this.config.kind === 'dungeon') this.buildDungeon(this.config.seed);
     else this.buildArena();
     this.createTilemap();
 
-    this.player = new Player(this, this, this.playerStart.x, this.playerStart.y, CLASSES.amos, this.profile());
+    this.player = new Player(this, this, this.playerStart.x, this.playerStart.y, this.classDef(), this.profile());
     this.spawnPending();
 
     if (this.config.kind === 'dungeon') {
@@ -167,6 +173,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
 
     this.player.tick(dt);
     if (!this.missionOver) for (const enemy of this.enemies) enemy.tick(dt, this.player);
+    for (const ally of this.allies) ally.tick(dt, this.enemies);
+    this.allies = this.allies.filter((ally) => ally.active);
     this.projectiles.update(dt);
     separateActors(this.player, this.enemies);
     this.enemies = this.enemies.filter((enemy) => !enemy.isDead);
@@ -182,6 +190,14 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.collectLoot();
     if (this.config.kind === 'dungeon') this.updateDungeon(time);
     else this.updateArena();
+  }
+
+  /** Ruft einen Verbündeten herbei; ein gleicher (gleiche Figur) wird abgelöst. */
+  spawnAlly(def: AllyDef, x: number, y: number, owner: Player, overrides?: AllyOverrides): Ally {
+    for (const old of this.allies) if (old.def.id === def.id) old.dismiss();
+    const ally = new Ally(this, this, x, y, def, owner, overrides);
+    this.allies.push(ally);
+    return ally;
   }
 
   spawnEnemy(id: EnemyId, x: number, y: number, difficulty?: EnemyDifficulty): Enemy {
@@ -349,6 +365,10 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
 
   private actorsOf(team: Team): readonly Actor[] {
     return team === 'player' ? [this.player] : this.enemies;
+  }
+
+  private classDef(): (typeof CLASSES)[ImplementedClassId] {
+    return CLASSES[this.profile().classId as ImplementedClassId] ?? CLASSES.amos;
   }
 
   private difficultyRules(): (typeof DIFFICULTY_RULES)[Difficulty] {

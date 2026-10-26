@@ -32,11 +32,11 @@ const rammbock: AbilityDef = {
   nameKey: 'ability.rammbock.name',
   icon: 'dash',
   cooldownMs: 7000,
-  execute({ player, world }) {
+  execute({ player, world, boost }) {
     const target = pickTarget(player, world.enemies);
     const angle = target ? Math.atan2(target.y - player.y, target.x - player.x) : player.facing;
     player.startDash(angle, RAMMBOCK.distance, RAMMBOCK.speed, (enemy) => {
-      world.combat.attack(player, enemy, RAMMBOCK.damageMultiplier);
+      world.combat.attack(player, enemy, RAMMBOCK.damageMultiplier * (1 + boost.damage));
       enemy.stun(RAMMBOCK.stunMs);
       world.combat.ring(enemy.x, enemy.y, 34, COLORS.accent, 220);
       player.scene.cameras.main.shake(110, 0.006);
@@ -51,8 +51,8 @@ const standhaft: AbilityDef = {
   nameKey: 'ability.standhaft.name',
   icon: 'shield',
   cooldownMs: 14000,
-  execute({ player, world }) {
-    player.startGuard(STANDHAFT.durationMs, STANDHAFT.damageTaken);
+  execute({ player, world, boost }) {
+    player.startBuff('standhaft', STANDHAFT.durationMs * (1 + boost.duration), { damageTaken: STANDHAFT.damageTaken, aura: COLORS.guard });
     for (const enemy of world.enemies) {
       if (!enemy.isDead && edgeDistance(player, enemy) <= STANDHAFT.tauntRadius) enemy.taunt(STANDHAFT.tauntMs);
     }
@@ -67,14 +67,15 @@ const gnadenloserSchlag: AbilityDef = {
   nameKey: 'ability.gnadenloser-schlag.name',
   icon: 'slam',
   cooldownMs: 9000,
-  execute({ player, world }) {
-    const hit = world.enemies.filter((enemy) => !enemy.isDead && edgeDistance(player, enemy) <= SCHLAG.radius);
+  execute({ player, world, boost }) {
+    const radius = SCHLAG.radius * (1 + boost.area);
+    const hit = world.enemies.filter((enemy) => !enemy.isDead && edgeDistance(player, enemy) <= radius);
     if (hit.length === 0) return false;
     for (const enemy of hit) {
-      world.combat.attack(player, enemy, SCHLAG.damageMultiplier);
+      world.combat.attack(player, enemy, SCHLAG.damageMultiplier * (1 + boost.damage));
       enemy.stun(SCHLAG.stunMs);
     }
-    world.combat.ring(player.x, player.y, SCHLAG.radius + player.radius, 0xffffff, 300);
+    world.combat.ring(player.x, player.y, radius + player.radius, 0xffffff, 300);
     player.scene.cameras.main.shake(130, 0.008);
     return true;
   },

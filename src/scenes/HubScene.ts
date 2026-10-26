@@ -59,6 +59,11 @@ export class HubScene extends Phaser.Scene implements WorldContext {
   player!: Player;
   readonly enemies: readonly Enemy[] = [];
 
+  /** Im Hub gibt es keine Kämpfe, also auch keine Verbündeten. */
+  spawnAlly(): null {
+    return null;
+  }
+
   private stations: Station[] = [];
   private crew: CrewMember[] = [];
   private pending: Station | null = null;
@@ -75,6 +80,7 @@ export class HubScene extends Phaser.Scene implements WorldContext {
     this.rng = createRng(Date.now());
     this.combat = new CombatSystem(this, this.rng);
     this.projectiles = new ProjectileSystem(this, this, () => []);
+    this.combat.projectiles = this.projectiles;
     this.stations = [];
     this.crew = [];
     this.pending = null;

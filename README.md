@@ -3,7 +3,7 @@
 Diablo-artiges Action-RPG im Universum von *The Expanse*: privates, nicht-kommerzielles Fanprojekt.
 Läuft als Progressive Web App (Phaser 3 + TypeScript + Vite) auf Smartphone und Tablet.
 
-**Stand: Meilenstein 5** – Titelseite mit drei Spielständen, begehbare Rocinante als Hub (Missionskonsole, Waffenkammer, Händler), zufällige Dungeon-Missionen mit Nebel, Truhen, Gegnern (Nahkämpfer, Schützen, Elite), Fähigkeiten, Erfahrung, Beute in fünf Seltenheiten (Herkunft Erde/Mars/Gürtel), Rucksack mit Ausrüstung und automatischem Spielstand.
+**Stand: Meilenstein 6** – vier spielbare Klassen (Amos, Naomi, Bobbie, Holden) mit je drei Fähigkeiten und Talentbaum, Titelseite mit drei Spielständen, begehbare Rocinante als Hub (Missionskonsole, Waffenkammer, Händler), zufällige Dungeon-Missionen mit Nebel, Truhen, Gegnern (Nahkämpfer, Schützen, Elite), Fähigkeiten, Erfahrung, Beute in fünf Seltenheiten (Herkunft Erde/Mars/Gürtel), Rucksack mit Ausrüstung und automatischem Spielstand.
 Design: [`docs/GDD.md`](docs/GDD.md) · Fahrplan: [`docs/MILESTONES.md`](docs/MILESTONES.md) · Projektregeln: [`CLAUDE.md`](CLAUDE.md)
 
 ## Starten
@@ -22,7 +22,7 @@ diese Adresse im Browser des Tablets öffnen. Rechner und Tablet müssen im selb
 
 - Auf den Boden tippen (oder halten und ziehen): dorthin laufen.
 - Gegner antippen: hinlaufen und angreifen.
-- Die drei Kreise unten rechts sind die Fähigkeiten (Amos: Rammbock, Standhaft, Gnadenloser Schlag), der kleine grüne Kreis ist der Trank.
+- Die drei Kreise unten rechts sind die Fähigkeiten der gewählten Figur, der kleine grüne Kreis ist der Trank. Links oben öffnen Rucksack-Taste (`I`) und Talent-Taste (`T`, mit Zahl der freien Punkte) die Fenster.
 - Im Hub: Station antippen, die Figur läuft hin und benutzt sie. Die Missionskonsole bietet drei Aufträge, der Händler verkauft Ausrüstung, das Terminal wechselt den Spielstand.
 - Ziel jeder Mission: Luftschleuse finden, ihre Wächter besiegen, hineingehen. Truhen öffnen sich beim Herangehen.
 - Beute (farbige Kristalle) wird beim Darüberlaufen aufgehoben. Der Rucksack-Knopf links oben (oder Taste `I`) öffnet Ausrüstung und Inventar.

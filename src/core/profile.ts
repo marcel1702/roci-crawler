@@ -15,6 +15,8 @@ export interface SaveData {
   xp: number;
   credits: number;
   missionsCompleted: number;
+  /** Verteilte Talentpunkte: Talent-Kennung -> Rang. */
+  talents?: Record<string, number>;
   /** Kennungen der Gegenstände, die im aktuellen Angebot des Händlers schon gekauft wurden. */
   shopBought?: string[];
   /** Zeitpunkt des letzten Speicherns (ms seit 1970), nur zur Anzeige. */
@@ -34,6 +36,8 @@ export class Profile {
   classId: string;
   missionsCompleted = 0;
   readonly shopBought = new Set<string>();
+  /** Talent-Kennung -> Rang. Wird beim Laden nicht geprüft; der Spieler prüft gegen den Baum seiner Klasse. */
+  talents: Record<string, number> = {};
   /** Wird bei jeder Änderung aufgerufen (Speichern wird davon entkoppelt). */
   onChange: (() => void) | null = null;
 
@@ -63,6 +67,7 @@ export class Profile {
       credits: this.wallet.credits,
       missionsCompleted: this.missionsCompleted,
       shopBought: [...this.shopBought],
+      talents: { ...this.talents },
       bag: [...this.inventory.bag],
       equipped: { ...this.inventory.equipped },
     };
@@ -90,6 +95,11 @@ export function parseProfile(raw: unknown, rules: ItemRules): ParseResult {
   const wallet = new Wallet(Math.max(0, Math.floor(finiteOr(raw.credits, 0))));
   const profile = new Profile(rules, typeof raw.classId === 'string' ? raw.classId : 'amos', progression, wallet);
   profile.missionsCompleted = Math.max(0, Math.floor(finiteOr(raw.missionsCompleted, 0)));
+  if (isRecord(raw.talents)) {
+    for (const [id, rank] of Object.entries(raw.talents)) {
+      if (typeof rank === 'number' && Number.isFinite(rank) && rank > 0) profile.talents[id] = Math.floor(rank);
+    }
+  }
   if (Array.isArray(raw.shopBought)) {
     for (const id of raw.shopBought) if (typeof id === 'string') profile.shopBought.add(id);
   }

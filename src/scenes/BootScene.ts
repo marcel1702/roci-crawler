@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { REGISTRY_PROFILE, REGISTRY_SESSION, SCENE_KEYS } from '../config/constants';
 import { createPlaceholderTextures } from '../graphics/placeholderTextures';
+import { CLASS_LIST } from '../data/classes';
 import type { Session } from '../persistence/session';
 import { SLOT_COUNT } from '../persistence/session';
 import type { MissionConfig } from './MissionScene';
@@ -11,7 +12,8 @@ import type { MissionConfig } from './MissionScene';
  * Abkürzungen zum Ausprobieren (überspringen die Titelseite):
  * - `?seed=123` startet genau diesen Dungeon, `?mode=arena` die Testarena (beides mit Spielstand 1),
  * - `?slot=2` lädt Spielstand 2 (oder beginnt dort mit Amos) und geht in den Hub,
- * - `?reset` beginnt in Spielstand 1 neu.
+ * - `?reset` beginnt in Spielstand 1 neu,
+ * - `?class=naomi` (amos, naomi, bobbie, holden) wählt die Figur, wenn dabei ein neuer Spielstand entsteht.
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -32,7 +34,9 @@ export class BootScene extends Phaser.Scene {
 
     const session = this.registry.get(REGISTRY_SESSION) as Session;
     const slot = slotParam >= 1 && slotParam <= SLOT_COUNT ? slotParam : 1;
-    const profile = (!params.has('reset') && session.load(slot)) || session.startNew(slot, 'amos');
+    const requested = params.get('class');
+    const classId = CLASS_LIST.some((c) => c.id === requested) ? (requested as string) : 'amos';
+    const profile = (!params.has('reset') && session.load(slot)) || session.startNew(slot, classId);
     this.registry.set(REGISTRY_PROFILE, profile);
     this.scene.start(mission ? SCENE_KEYS.mission : SCENE_KEYS.hub, mission ?? undefined);
   }

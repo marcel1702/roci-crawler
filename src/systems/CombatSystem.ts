@@ -4,6 +4,7 @@ import { COLORS } from '../config/palette';
 import { rollDamage } from '../core/combat';
 import type { Rng } from '../core/rng';
 import type { Actor } from '../entities/Actor';
+import type { ProjectileSystem } from './ProjectileSystem';
 
 const SWING_MS = 150;
 const FLOAT_TEXT_MS = 650;
@@ -15,6 +16,54 @@ export class CombatSystem {
     private readonly rng: Rng,
   ) {}
 
+  /** Grundangriff der Figur: Nahkampfschlag oder Geschoss, je nach Klasse. */
+  basicAttack(attacker: Actor, target: Actor): number {
+    if (attacker.basic.kind === 'melee') return this.meleeAttack(attacker, target);
+
+    attacker.faceToward(target.x, target.y);
+    const crit = attacker.critChance > 0 && this.rng.chance(attacker.critChance);
+    const amount = Math.round(rollDamage(attacker.stats, this.rng) * attacker.damageMultiplier * (crit ? CRIT_MULTIPLIER : 1));
+    const angle = Math.atan2(target.y - attacker.y, target.x - attacker.x);
+    this.projectiles?.spawn({
+      source: attacker,
+      x: attacker.x + Math.cos(angle) * (attacker.radius + 4),
+      y: attacker.y + Math.sin(angle) * (attacker.radius + 4),
+      angle,
+      speed: attacker.basic.projectileSpeed,
+      damage: amount,
+      crit,
+      tint: 0x9fe8ff,
+      radius: 3.5,
+    });
+    return amount;
+  }
+
+  /** Verbindet das Geschoss-System (wird nach dem Erzeugen beider Systeme gesetzt). */
+  projectiles: ProjectileSystem | null = null;
+
+  /**
+   * Flächenschaden um einen Punkt gegen alle `targets` im Radius (bis zum Rand der Ziele gemessen).
+   * Liefert die Zahl der Getroffenen.
+   */
+  areaDamage(
+    source: Actor,
+    x: number,
+    y: number,
+    radius: number,
+    multiplier: number,
+    targets: readonly Actor[],
+    stunMs = 0,
+  ): number {
+    let hits = 0;
+    for (const target of targets) {
+      if (target.isDead || Math.hypot(target.x - x, target.y - y) - target.radius > radius) continue;
+      this.attack(source, target, multiplier);
+      if (stunMs > 0) target.stun(stunMs);
+      hits++;
+    }
+    return hits;
+  }
+
   /** Grundangriff im Nahkampf, optional mit Schadensfaktor (z. B. für Fähigkeiten). */
   meleeAttack(attacker: Actor, target: Actor, multiplier = 1): number {
     attacker.faceToward(target.x, target.y);
@@ -25,13 +74,13 @@ export class CombatSystem {
   /** Würfelt einen Treffer (mit Chance auf Kritisch) und wendet ihn an. Liefert den tatsächlichen Schaden. */
   attack(attacker: Actor, target: Actor, multiplier = 1): number {
     const crit = attacker.critChance > 0 && this.rng.chance(attacker.critChance);
-    const amount = Math.round(rollDamage(attacker.stats, this.rng) * multiplier * (crit ? CRIT_MULTIPLIER : 1));
+    const amount = Math.round(rollDamage(attacker.stats, this.rng) * multiplier * attacker.damageMultiplier * (crit ? CRIT_MULTIPLIER : 1));
     return this.dealDamage(attacker, target, amount, crit);
   }
 
   /** Würfelt Schaden aus den Werten des Angreifers, ohne ihn anzuwenden (für Geschosse). */
   rollDamage(attacker: Actor, multiplier = 1): number {
-    return Math.round(rollDamage(attacker.stats, this.rng) * multiplier);
+    return Math.round(rollDamage(attacker.stats, this.rng) * multiplier * attacker.damageMultiplier);
   }
 
   /** Wendet Schaden an, zeigt die Zahl und meldet einen Todesfall. Liefert den tatsächlichen Schaden. */

@@ -10,6 +10,7 @@ import { InventoryScene } from './scenes/InventoryScene';
 import { MissionScene } from './scenes/MissionScene';
 import { MissionSelectScene } from './scenes/MissionSelectScene';
 import { ShopScene } from './scenes/ShopScene';
+import { TalentScene } from './scenes/TalentScene';
 import { TitleScene } from './scenes/TitleScene';
 
 export function createGame(container: HTMLElement, session: Session): Phaser.Game {
@@ -25,7 +26,7 @@ export function createGame(container: HTMLElement, session: Session): Phaser.Gam
     disableContextMenu: true,
     render: { antialias: true, powerPreference: 'high-performance' },
     // Reihenfolge = Zeichenreihenfolge: Welt unten, HUD darüber, Overlays ganz oben.
-    scene: [BootScene, TitleScene, HubScene, MissionScene, HudScene, InventoryScene, ShopScene, MissionSelectScene],
+    scene: [BootScene, TitleScene, HubScene, MissionScene, HudScene, InventoryScene, ShopScene, MissionSelectScene, TalentScene],
     // Die Sitzung steht bereit, bevor die erste Szene startet.
     callbacks: { preBoot: (g) => g.registry.set(REGISTRY_SESSION, session) },
   });

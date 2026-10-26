@@ -34,6 +34,7 @@ export const SCENE_KEYS = {
   hub: 'HubScene',
   inventory: 'InventoryScene',
   shop: 'ShopScene',
+  talents: 'TalentScene',
   missionSelect: 'MissionSelectScene',
 } as const;
 

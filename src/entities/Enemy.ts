@@ -40,11 +40,14 @@ export class Enemy extends Actor {
   private windupAim = 0;
   private aimLength = 0;
   private tauntMs = 0;
+  private hackMs = 0;
+  private hackDrawn = false;
   private stunDrawn = false;
   private readonly hpBar: Phaser.GameObjects.Graphics;
   private readonly targetRing: Phaser.GameObjects.Image;
   private readonly telegraph: Phaser.GameObjects.Graphics;
   private readonly stunMark: Phaser.GameObjects.Graphics;
+  private readonly hackMark: Phaser.GameObjects.Graphics;
 
   constructor(
     scene: Phaser.Scene,
@@ -61,10 +64,11 @@ export class Enemy extends Actor {
     this.telegraph = new Phaser.GameObjects.Graphics(scene);
     this.hpBar = new Phaser.GameObjects.Graphics(scene).setVisible(false);
     this.stunMark = new Phaser.GameObjects.Graphics(scene);
+    this.hackMark = new Phaser.GameObjects.Graphics(scene);
     // Unter der Figur: Gefahrenzone und Zielring.
     this.addAt(this.telegraph, 1);
     this.addAt(this.targetRing, 2);
-    this.add([this.hpBar, this.stunMark]);
+    this.add([this.hpBar, this.stunMark, this.hackMark]);
   }
 
   get isElite(): boolean {
@@ -73,6 +77,12 @@ export class Enemy extends Actor {
 
   setTargeted(targeted: boolean): void {
     if (this.active) this.targetRing.setVisible(targeted);
+  }
+
+  /** Gehackt: nimmt `factor`-fachen Schaden, solange es dauert. */
+  hack(durationMs: number, factor: number): void {
+    this.hackMs = Math.max(this.hackMs, durationMs);
+    this.damageTakenMultiplier = factor;
   }
 
   /** Zieht den Gegner in den Kampf; Schützen halten währenddessen keinen Abstand. */
@@ -85,6 +95,7 @@ export class Enemy extends Actor {
     if (this.isDead) return;
     this.tickTimers(dt);
     this.tauntMs = Math.max(0, this.tauntMs - dt * 1000);
+    this.tickHack(dt);
 
     if (this.isStunned) {
       this.drawStun();
@@ -264,6 +275,7 @@ export class Enemy extends Actor {
     this.setTargeted(false);
     this.hpBar.setVisible(false);
     this.telegraph.clear();
+    this.hackMark.clear();
     this.clearStun();
     this.scene.tweens.add({
       targets: this,
@@ -272,6 +284,25 @@ export class Enemy extends Actor {
       duration: DEATH_FADE_MS,
       onComplete: () => this.destroy(),
     });
+  }
+
+  private tickHack(dt: number): void {
+    if (this.hackMs <= 0) {
+      if (this.hackDrawn) {
+        this.hackMark.clear();
+        this.hackDrawn = false;
+      }
+      return;
+    }
+    this.hackMs -= dt * 1000;
+    if (this.hackMs <= 0) this.damageTakenMultiplier = 1;
+    const spin = this.scene.time.now / 300;
+    this.hackMark.clear().lineStyle(1.5, 0x5fd8ff, 0.9);
+    for (let i = 0; i < 3; i++) {
+      const a = spin + (i * Math.PI * 2) / 3;
+      this.hackMark.beginPath().arc(0, 0, this.radius + 5, a, a + 0.9).strokePath();
+    }
+    this.hackDrawn = true;
   }
 
   private drawStun(): void {

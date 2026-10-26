@@ -3,14 +3,18 @@ import { ABILITIES } from '../abilities';
 import type { AbilityDef } from '../abilities';
 import { GAME_EVENTS, POTION, TAP, TEXTURE_SCALE, actorTextureKey } from '../config/constants';
 import { COLORS } from '../config/palette';
+import { hasLineOfSight } from '../core/collision';
 import { edgeDistance, isInReach } from '../core/combat';
 import { Cooldown } from '../core/cooldown';
 import { findPath } from '../core/pathfinding';
-import { deriveStats } from '../core/items';
+import { addMods, deriveStats } from '../core/items';
 import type { DerivedStats } from '../core/items';
 import type { Profile } from '../core/profile';
 import type { Progression } from '../core/progression';
 import { statsAtLevel } from '../core/stats';
+import { NO_BOOST, availablePoints, sanitizeRanks, talentEffects } from '../core/talents';
+import type { AbilityBoost, TalentTree } from '../core/talents';
+import { TALENTS } from '../data/talents';
 import type { ClassDef } from '../data/types';
 import { t } from '../i18n';
 import { Actor } from './Actor';
@@ -35,10 +39,24 @@ interface DashState {
   onHit: (enemy: Enemy) => void;
 }
 
-/** Werte der Figur aus Klasse, Stufe und Ausrüstung. */
-function derive(classDef: ClassDef, profile: Profile): DerivedStats {
+interface BuffEffect {
+  /** Faktor auf erlittenen Schaden. */
+  damageTaken?: number;
+  /** Faktor auf das Lauftempo. */
+  speed?: number;
+  /** Faktor auf verursachten Schaden. */
+  damage?: number;
+  /** Farbe eines Leuchtrings um die Figur. */
+  aura?: number;
+}
+
+/** Werte der Figur aus Klasse, Stufe, Ausrüstung und Talenten. */
+function derive(classDef: ClassDef, profile: Profile): DerivedStats & { boosts: AbilityBoost[] } {
   const base = statsAtLevel(classDef.stats, classDef.growth, profile.progression.level);
-  return deriveStats(base, profile.inventory.mods());
+  const effects = talentEffects(TALENTS[classDef.id], profile.talents);
+  const mods = profile.inventory.mods();
+  addMods(mods, effects.mods);
+  return { ...deriveStats(base, mods), boosts: effects.boosts };
 }
 
 /** Die Spielfigur. Bekommt Befehle (laufen / Gegner angreifen / Fähigkeit) von Eingabe und HUD. */
@@ -56,10 +74,13 @@ export class Player extends Actor {
   /** Zusätzlicher Anteil, den Tränke heilen (aus Ausrüstung). */
   potionHealPct = 0;
 
+  /** Verbesserungen der drei Fähigkeiten aus Talenten. */
+  boosts: AbilityBoost[] = [{ ...NO_BOOST }, { ...NO_BOOST }, { ...NO_BOOST }];
+
   private repathTimer = 0;
   private dash: DashState | null = null;
   private ghostTimer = 0;
-  private guardMs = 0;
+  private readonly buffs = new Map<string, { ms: number; effect: BuffEffect }>();
   private readonly aura: Phaser.GameObjects.Graphics;
 
   constructor(
@@ -70,10 +91,13 @@ export class Player extends Actor {
     classDef: ClassDef,
     profile: Profile,
   ) {
+    // Gespeicherte Talente prüfen (z. B. nach Änderungen am Baum oder manipulierten Daten), bevor sie wirken.
+    profile.talents = sanitizeRanks(TALENTS[classDef.id], profile.talents, profile.progression.level);
     const derived = derive(classDef, profile);
     super(scene, world, x, y, derived.stats, classDef.id);
     this.classDef = classDef;
     this.profile = profile;
+    this.basic = classDef.basic;
     this.applyDerived(derived);
     this.potions = this.maxPotions;
     this.abilities = classDef.abilities.map((id) => ({ def: ABILITIES[id], cooldown: new Cooldown() }));
@@ -86,6 +110,15 @@ export class Player extends Actor {
     return this.profile.progression;
   }
 
+  get talentTree(): TalentTree {
+    return TALENTS[this.classDef.id];
+  }
+
+  /** Unverteilte Talentpunkte. */
+  get talentPoints(): number {
+    return availablePoints(this.talentTree, this.profile.talents, this.progression.level);
+  }
+
   /** Berechnet die Werte neu (nach Stufenaufstieg oder Wechsel der Ausrüstung); das Verhältnis der Lebenspunkte bleibt. */
   refreshStats(): void {
     const ratio = this.hp / this.stats.maxHp;
@@ -94,7 +127,8 @@ export class Player extends Actor {
     this.potions = Math.min(this.potions, this.maxPotions);
   }
 
-  private applyDerived(derived: DerivedStats): void {
+  private applyDerived(derived: DerivedStats & { boosts: AbilityBoost[] }): void {
+    this.boosts = derived.boosts;
     this.stats = derived.stats;
     this.armor = derived.armor;
     this.critChance = derived.critChance;
@@ -136,8 +170,9 @@ export class Player extends Actor {
   useAbility(index: number): boolean {
     const slot = this.abilities[index];
     if (!slot || this.isDead || this.isStunned || this.dash || !slot.cooldown.ready) return false;
-    const done = slot.def.execute({ player: this, world: this.world, scene: this.scene });
-    if (done) slot.cooldown.trigger(slot.def.cooldownMs * (1 - this.cooldownReduction));
+    const boost = this.boosts[index] ?? NO_BOOST;
+    const done = slot.def.execute({ player: this, world: this.world, scene: this.scene, boost });
+    if (done) slot.cooldown.trigger(slot.def.cooldownMs * (1 - this.cooldownReduction) * (1 - Math.min(0.6, boost.cooldown)));
     return done;
   }
 
@@ -159,12 +194,32 @@ export class Player extends Actor {
     this.dash = { dirX: Math.cos(angle), dirY: Math.sin(angle), remaining: distance, speed, onHit };
   }
 
-  /** Schadensminderung für `durationMs`. */
-  startGuard(durationMs: number, damageTaken: number): void {
-    this.guardMs = durationMs;
-    this.damageTakenMultiplier = damageTaken;
-    this.aura.setVisible(true);
+  /** Zeitlich begrenzter Verstärkungszauber; gleiche Kennungen ersetzen einander, verschiedene wirken gemeinsam. */
+  startBuff(id: string, durationMs: number, effect: BuffEffect): void {
+    this.buffs.set(id, { ms: durationMs, effect });
+    this.applyBuffs();
   }
+
+  /** Setzt die Faktoren aus allen aktiven Verstärkungen neu zusammen. */
+  private applyBuffs(): void {
+    let taken = 1;
+    let speed = 1;
+    let damage = 1;
+    let aura: number | undefined;
+    for (const { effect } of this.buffs.values()) {
+      taken *= effect.damageTaken ?? 1;
+      speed *= effect.speed ?? 1;
+      damage *= effect.damage ?? 1;
+      aura ??= effect.aura;
+    }
+    this.damageTakenMultiplier = taken;
+    this.speedMultiplier = speed;
+    this.damageMultiplier = damage;
+    this.auraColor = aura ?? null;
+    if (aura === undefined) this.aura.clear().setVisible(false);
+  }
+
+  private auraColor: number | null = null;
 
   gainXp(amount: number): void {
     const reached = this.progression.gain(amount);
@@ -184,7 +239,7 @@ export class Player extends Actor {
     this.tickTimers(dt);
     this.potionCooldown.update(dt * 1000);
     for (const slot of this.abilities) slot.cooldown.update(dt * 1000);
-    this.tickGuard(dt);
+    this.tickBuffs(dt);
 
     if (this.dash) {
       this.tickDash(dt);
@@ -195,7 +250,9 @@ export class Player extends Actor {
     const target = this.attackTarget;
     if (target?.isDead) this.setAttackTarget(null);
     else if (target) {
-      if (isInReach(this, target, this.stats.attackRange)) {
+      // Fernkämpfer brauchen freie Sicht; sonst laufen sie weiter, bis sie schießen können.
+      const sight = this.basic.kind === 'melee' || hasLineOfSight(this.world.grid, this.x, this.y, target.x, target.y);
+      if (sight && isInReach(this, target, this.stats.attackRange)) {
         this.follower.clear();
         this.faceToward(target.x, target.y);
         this.tryAttack(target);
@@ -210,7 +267,8 @@ export class Player extends Actor {
   protected override onDeath(): void {
     this.setAttackTarget(null);
     this.dash = null;
-    this.aura.setVisible(false);
+    this.buffs.clear();
+    this.applyBuffs();
     this.setAlpha(0.45);
   }
 
@@ -237,22 +295,28 @@ export class Player extends Actor {
     }
   }
 
-  private tickGuard(dt: number): void {
-    if (this.guardMs <= 0) return;
-    this.guardMs -= dt * 1000;
-    if (this.guardMs <= 0) {
-      this.guardMs = 0;
-      this.damageTakenMultiplier = 1;
-      this.aura.clear().setVisible(false);
-      return;
+  private tickBuffs(dt: number): void {
+    if (this.buffs.size === 0) return;
+    let expired = false;
+    for (const [id, buff] of this.buffs) {
+      buff.ms -= dt * 1000;
+      if (buff.ms <= 0) {
+        this.buffs.delete(id);
+        expired = true;
+      }
     }
-    const pulse = 0.55 + 0.3 * Math.sin(this.scene.time.now / 120);
-    this.aura
-      .clear()
-      .fillStyle(COLORS.guard, 0.14)
-      .fillCircle(0, 0, this.radius + 7)
-      .lineStyle(2, COLORS.guard, pulse)
-      .strokeCircle(0, 0, this.radius + 7);
+    if (expired) this.applyBuffs();
+
+    if (this.auraColor !== null) {
+      const pulse = 0.55 + 0.3 * Math.sin(this.scene.time.now / 120);
+      this.aura
+        .setVisible(true)
+        .clear()
+        .fillStyle(this.auraColor, 0.14)
+        .fillCircle(0, 0, this.radius + 7)
+        .lineStyle(2, this.auraColor, pulse)
+        .strokeCircle(0, 0, this.radius + 7);
+    }
   }
 
   private spawnGhost(): void {

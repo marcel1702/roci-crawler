@@ -7,7 +7,22 @@ export type LootSource = 'enemy' | 'elite' | 'guardian' | 'chest';
 export type ClassId = 'amos' | 'naomi' | 'bobbie' | 'holden';
 
 /** Fähigkeiten aller Klassen; die Wirkung steht in `src/abilities`, hier nur die Kennung. */
-export type AbilityId = 'rammbock' | 'standhaft' | 'gnadenloser-schlag';
+export type AbilityId =
+  | 'rammbock'
+  | 'standhaft'
+  | 'gnadenloser-schlag'
+  | 'kampfdrohne'
+  | 'hack'
+  | 'emp'
+  | 'raketensalve'
+  | 'ruestung'
+  | 'gauss'
+  | 'sperrfeuer'
+  | 'amos-eingriff'
+  | 'inspirieren';
+
+/** Grundangriff: Nahkampf oder Geschoss. */
+export type BasicAttack = { kind: 'melee' } | { kind: 'ranged'; projectileSpeed: number };
 
 export interface ClassDef {
   id: ClassId;
@@ -16,6 +31,7 @@ export interface ClassDef {
   color: number;
   stats: ActorStats;
   growth: LevelGrowth;
+  basic: BasicAttack;
   /** Belegung der drei Fähigkeiten-Tasten. */
   abilities: readonly [AbilityId, AbilityId, AbilityId];
 }
@@ -50,4 +66,21 @@ export interface EnemyDef {
   aggroRange: number;
   /** Ab diesem Abstand gibt der Gegner die Verfolgung auf. */
   leashRange: number;
+}
+
+/** Ein herbeigerufener Verbündeter (Drohne, Crewmitglied): kämpft eine Weile mit, ist unverwundbar. */
+export interface AllyDef {
+  id: string;
+  /** Textur der Figur (`actor-<id>`). */
+  textureId: string;
+  radius: number;
+  moveSpeed: number;
+  /** Schaden als Anteil des durchschnittlichen Grundschadens der Spielerin. */
+  damageFactor: number;
+  basic: BasicAttack;
+  attackRange: number;
+  attackCooldownMs: number;
+  lifetimeMs: number;
+  /** Gegner in diesem Abstand werden angegriffen. */
+  aggroRange: number;
 }

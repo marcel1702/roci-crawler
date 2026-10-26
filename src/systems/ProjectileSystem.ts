@@ -13,6 +13,9 @@ export interface ProjectileSpawn {
   speed: number;
   damage: number;
   radius?: number;
+  crit?: boolean;
+  /** Farbe des Geschosses (Standard: Gelb der Gegner). */
+  tint?: number;
   /** Flugzeit in Sekunden, danach verschwindet das Geschoss. */
   lifetime?: number;
 }
@@ -21,6 +24,7 @@ interface LiveProjectile {
   state: ProjectileState;
   team: Team;
   damage: number;
+  crit: boolean;
   source: Actor;
   sprite: Phaser.GameObjects.Image;
 }
@@ -41,6 +45,7 @@ export class ProjectileSystem {
       .image(spec.x, spec.y, TEXTURE_KEYS.projectile)
       .setScale(TEXTURE_SCALE * (radius / 4))
       .setDepth(40);
+    if (spec.tint !== undefined) sprite.setTint(spec.tint);
     this.live.push({
       state: {
         x: spec.x,
@@ -52,6 +57,7 @@ export class ProjectileSystem {
       },
       team: spec.source.team,
       damage: spec.damage,
+      crit: spec.crit ?? false,
       source: spec.source,
       sprite,
     });
@@ -78,7 +84,7 @@ export class ProjectileSystem {
         (target) => !target.isDead && Math.hypot(target.x - x, target.y - y) <= target.radius + radius,
       );
       if (victim) {
-        this.world.combat.dealDamage(projectile.source, victim, projectile.damage);
+        this.world.combat.dealDamage(projectile.source, victim, projectile.damage, projectile.crit);
         this.spark(x, y);
         projectile.sprite.destroy();
         continue;

@@ -70,6 +70,16 @@ Pro Spielstand wird **eine** Klasse gewählt. Jede hat Grundangriff (automatisch
 
 Stufenwachstum Amos: +12 Lebenspunkte und +6 % Schaden pro Stufe.
 
+**Naomi, Bobbie und Holden, wie umgesetzt (Meilenstein 6)** `[Umgesetzt]`, alle Zahlen sind Startwerte. Alle drei kämpfen im **Fernkampf** (Grundangriff ist ein Geschoss, braucht Sichtlinie; die Figur läuft, bis sie schießen kann):
+
+| Klasse | Werte (Stufe 1) | Fähigkeiten |
+|---|---|---|
+| **Naomi** (Technikerin) | 100 LP, Tempo 165, Schaden 7–10, Reichweite 170 | **Kampfdrohne:** 10 s Verbündete, schießt mit 70 % deines Schadens (14 s) · **Hack:** nächster Gegner ≤ 280 px: 2,5 s betäubt, nimmt 5 s lang +35 % Schaden (9 s) · **EMP-Impuls:** Radius 110: 90 % Schaden und 2 s Betäubung (12 s) |
+| **Bobbie** (Power-Rüstung) | 175 LP, Tempo 128, Schaden 13–17, Reichweite 190 | **Raketensalve:** 3 Raketen auf die dichteste Gruppe ≤ 340 px, Warnzone, je 110 % Schaden, Radius 56 (10 s) · **Rüstung versiegeln:** 5 s −70 % Schaden, −50 % Tempo (16 s) · **Gauss-Schuss:** durchschlägt alles auf 380 px, 260 % Schaden (8 s) |
+| **Holden** (Anführer) | 125 LP, Tempo 150, Schaden 8–11, Reichweite 140 | **Sperrfeuer:** Warnzone, dann 4 Einschläge (je 100 %, Radius 58) auf die dichteste Gruppe (14 s) · **Amos greift ein:** 10 s Verbündeter im Nahkampf, 110 % Schaden (18 s) · **Inspirieren:** heilt 35 % und gibt 6 s +25 % Schaden und Tempo (20 s) |
+
+**Verbündete** (Drohne, Amos) sind unverwundbar, werden von Gegnern ignoriert und verschwinden nach Ablauf; ein gleicher Verbündeter wird abgelöst. Für alle Klassen gilt Stufenwachstum von etwa +6 % Schaden und +9 bis +13 Leben je Stufe.
+
 Support im Einzelspiel: Holdens Besonderheit sind **Crew-Rufe** (Fähigkeiten, die die übrigen Figuren als Unterstützung einsetzen).
 
 ## 6. Akte `[Vorgabe]`, Inhalte `[Vorschlag]`
@@ -156,7 +166,8 @@ Gegner werden mit der Spielerstufe etwas stärker (+6 % Leben, +4 % Schaden je S
 - Level 1–30; ca. 10 Level pro Akt. Pro Level ein Talentpunkt ab Level 2 (Talente: Meilenstein 6).
 - Erfahrung für die nächste Stufe: `30 + 20·Stufe + 3·Stufe²`; Stufenaufstieg heilt vollständig. Schläger 15 EP, Schütze 20 EP, Brecher 80 EP `[Umgesetzt, Startwerte]`.
 - Tränke: 3 pro Mission, heilen 40 % der maximalen Lebenspunkte, 4 s Abklingzeit `[Umgesetzt]`.
-- Kleiner Talentbaum: 3 Zweige mit je 4 Knoten pro Klasse (ca. 12 Knoten), Respec im Hub gegen Credits.
+- **Talentbaum** `[Umgesetzt, Meilenstein 6]`: je Klasse **3 Zweige × 4 Reihen** (12 Knoten). Reihe 1–3 haben je 3 Ränge, Reihe 4 (Spitze) einen Rang. Eine Reihe schaltet sich frei, wenn im Zweig genug Punkte stecken (3 / 6 / 9). Insgesamt 30 Ränge für 29 Punkte bis Stufe 30, also eine echte Auswahl. Effekte: Werte (Leben, Schaden, Panzerung, Krit., Tempo, Tränke …) und Verbesserungen der eigenen Fähigkeiten (kürzere Abklingzeit, mehr Wirkung/Bereich/Dauer). Beschreibungen entstehen aus den Zahlen.
+- **Zurücksetzen** kostet `25 × Stufe` Credits und geht nur im Hub. Ungenutzte Punkte zeigt die Talent-Taste (neben dem Rucksack) als Zahl.
 - Schwierigkeit skaliert pro Akt; kein Level-Grind nötig, Wiederholen früherer Missionen bleibt möglich.
 
 ## 11. Hub: Die Rocinante `[Vorgabe]`
@@ -194,7 +205,7 @@ Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwisc
 ## 14. Offene Fragen (bitte vor dem jeweiligen Meilenstein klären)
 
 1. **Eine Klasse pro Spielstand** (so umgesetzt) oder im Hub wechselbar? (Meilenstein 6)
-2. **Holdens Crew-Rufe** als Support-Mechanik: einverstanden? (Meilenstein 6)
+2. **Holdens Crew-Rufe** (so umgesetzt: Sperrfeuer, Amos greift ein, Inspirieren): einverstanden?
 3. **Schwerelosigkeit:** direkte Steuerung mit „Stabilisieren“-Taste (Vorschlag) oder Autopilot, der selbst abbremst? (Meilenstein 7)
 4. **Gegner und Bosse:** eigene Figuren im Universum (Vorschlag) oder bekannte Figuren aus Büchern/Serie? (Meilenstein 8)
 5. ~~Hosting für den Tablet-Test~~ `[Entschieden]` GitHub Pages (siehe README).

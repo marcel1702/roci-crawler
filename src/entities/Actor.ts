@@ -6,6 +6,7 @@ import { armorReduction } from '../core/items';
 import { Cooldown } from '../core/cooldown';
 import { PathFollower } from '../core/follower';
 import type { ActorStats } from '../core/stats';
+import type { BasicAttack } from '../data/types';
 import type { WorldContext } from './WorldContext';
 
 /** Läuft ein Akteur weniger als diesen Anteil seiner Sollstrecke, gilt er als blockiert. */
@@ -29,6 +30,12 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   critChance = 0;
   /** Anteil des verursachten Schadens, der als Leben zurückkommt. */
   lifesteal = 0;
+  /** Faktor auf das Lauftempo (z. B. 0.5 mit versiegelter Rüstung). */
+  speedMultiplier = 1;
+  /** Faktor auf verursachten Schaden (z. B. durch Inspirieren). */
+  damageMultiplier = 1;
+  /** Grundangriff: Nahkampf oder Geschoss. */
+  basic: BasicAttack = { kind: 'melee' };
 
   protected readonly follower = new PathFollower();
   protected readonly attackCooldown = new Cooldown();
@@ -134,7 +141,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   protected tryAttack(target: Actor): boolean {
     if (!this.attackCooldown.ready || !isInReach(this, target, this.stats.attackRange)) return false;
     this.attackCooldown.trigger(this.stats.attackCooldownMs);
-    this.world.combat.meleeAttack(this, target);
+    this.world.combat.basicAttack(this, target);
     return true;
   }
 
@@ -144,7 +151,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
       this.stuckSeconds = 0;
       return;
     }
-    const { dx, dy } = this.follower.step(this.x, this.y, this.stats.moveSpeed, dt);
+    const { dx, dy } = this.follower.step(this.x, this.y, this.stats.moveSpeed * this.speedMultiplier, dt);
     const wanted = Math.hypot(dx, dy);
     if (wanted === 0) {
       this.follower.commit();

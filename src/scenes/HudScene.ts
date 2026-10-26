@@ -45,6 +45,7 @@ export class HudScene extends Phaser.Scene {
   private abilityButtons: AbilityButton[] = [];
   private potionButton!: AbilityButton;
   private bagButton!: AbilityButton;
+  private talentButton!: AbilityButton;
   private hint!: Phaser.GameObjects.Text;
   private banner!: Phaser.GameObjects.Text;
   private overlayShade!: Phaser.GameObjects.Rectangle;
@@ -95,6 +96,8 @@ export class HudScene extends Phaser.Scene {
     this.potionButton.setIcon('potion');
     this.bagButton = new AbilityButton(this, COLORS.uiDim);
     this.bagButton.setIcon('bag');
+    this.talentButton = new AbilityButton(this, COLORS.uiDim);
+    this.talentButton.setIcon('talents');
 
     this.hint = this.makeText({ color: '#dbe4f5', align: 'center' }).setOrigin(0.5, 1).setText(t('hud.hint.controls'));
     this.banner = this.makeText({ fontStyle: 'bold', color: '#ffe08a', align: 'center' }).setOrigin(0.5).setVisible(false);
@@ -114,6 +117,7 @@ export class HudScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
     this.input.on(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
     this.input.keyboard?.on('keydown-I', this.openInventory, this);
+    this.input.keyboard?.on('keydown-T', this.openTalents, this);
     const on = this.game.events;
     on.on(GAME_EVENTS.missionReady, this.onMissionReady, this);
     on.on(GAME_EVENTS.hubReady, this.onHubReady, this);
@@ -127,6 +131,7 @@ export class HudScene extends Phaser.Scene {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
       this.input.keyboard?.off('keydown-I', this.openInventory, this);
+      this.input.keyboard?.off('keydown-T', this.openTalents, this);
       on.off(GAME_EVENTS.missionReady, this.onMissionReady, this);
       on.off(GAME_EVENTS.hubReady, this.onHubReady, this);
       on.off(GAME_EVENTS.waveStarted, this.onWaveStarted, this);
@@ -166,6 +171,7 @@ export class HudScene extends Phaser.Scene {
       this.playerName.setText(nameText);
     }
 
+    this.talentButton.setState({ cooldownFraction: 0, cooldownSeconds: 0, usable: true, badge: player.talentPoints > 0 ? player.talentPoints : undefined });
     if (this.world === 'hub') {
       this.creditsText.setText(t('inv.credits', { amount: player.profile.wallet.credits }));
       this.targetBar.setVisible(false);
@@ -199,7 +205,8 @@ export class HudScene extends Phaser.Scene {
   /** True, wenn ein Bildschirmpunkt auf einem Bedienelement liegt (Tipp darf dann nicht laufen lassen). */
   isOverUi(screenX: number, screenY: number): boolean {
     const pad = 10 * this.u;
-    const buttons = this.world === 'hub' ? [this.bagButton] : [...this.abilityButtons, this.potionButton, this.bagButton];
+    const common = [this.bagButton, this.talentButton];
+    const buttons = this.world === 'hub' ? common : [...this.abilityButtons, this.potionButton, ...common];
     return buttons.some((button) => button.contains(screenX, screenY, pad));
   }
 
@@ -211,6 +218,11 @@ export class HudScene extends Phaser.Scene {
     if (this.bagButton.contains(pointer.x, pointer.y, pad)) {
       this.bagButton.press();
       this.openInventory();
+      return;
+    }
+    if (this.talentButton.contains(pointer.x, pointer.y, pad)) {
+      this.talentButton.press();
+      this.openTalents();
       return;
     }
     if (this.world === 'hub') return;
@@ -226,7 +238,7 @@ export class HudScene extends Phaser.Scene {
 
   /** True, solange Rucksack, Händler oder Auftragswahl offen sind: dann gehören alle Tipps dem Fenster. */
   private overlayOpen(): boolean {
-    return [SCENE_KEYS.inventory, SCENE_KEYS.shop, SCENE_KEYS.missionSelect].some((key) => this.scene.isActive(key));
+    return [SCENE_KEYS.inventory, SCENE_KEYS.shop, SCENE_KEYS.missionSelect, SCENE_KEYS.talents].some((key) => this.scene.isActive(key));
   }
 
   /** Öffnet Rucksack und Ausrüstung; die Welt (Hub oder Mission) pausiert, solange er offen ist. */
@@ -239,6 +251,14 @@ export class HudScene extends Phaser.Scene {
 
   private setCombatUi(visible: boolean): void {
     for (const button of [...this.abilityButtons, this.potionButton]) button.setVisible(visible);
+  }
+
+  /** Öffnet den Talentbaum; die Welt pausiert, solange er offen ist. */
+  private openTalents(): void {
+    if (!this.player || this.locked || this.overlayOpen()) return;
+    const parent = this.world === 'hub' ? SCENE_KEYS.hub : SCENE_KEYS.mission;
+    this.scene.pause(parent);
+    this.scene.launch(SCENE_KEYS.talents, { parent });
   }
 
   private onHubReady(player: Player): void {
@@ -427,7 +447,9 @@ export class HudScene extends Phaser.Scene {
 
     // Rucksack-Taste: links unter den Leisten
     const bagR = 24 * u;
-    this.bagButton.layout(left + bagR, top + 19 * u + barH + 3 * u + 5 * u + 10 * u + bagR, bagR);
+    const bagY = top + 19 * u + barH + 3 * u + 5 * u + 10 * u + bagR;
+    this.bagButton.layout(left + bagR, bagY, bagR);
+    this.talentButton.layout(left + bagR * 3 + 8 * u, bagY, bagR);
 
     // Ziel: oben Mitte
     const targetW = clamp(shortCss * 0.5, 160, 260) * u;

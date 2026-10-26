@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { AbilityIcon } from '../abilities';
 import { COLORS } from '../config/palette';
 
-export type ButtonIcon = AbilityIcon | 'potion' | 'bag';
+export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents';
 
 export interface ButtonState {
   /** Verbleibender Anteil der Abklingzeit, 1 = gerade ausgelöst, 0 = bereit. */
@@ -148,6 +148,80 @@ export class AbilityButton {
           g.lineBetween(x + Math.cos(a) * r * 0.2, y + Math.sin(a) * r * 0.2, x + Math.cos(a) * r * 0.55, y + Math.sin(a) * r * 0.55);
         }
         g.fillCircle(x, y, r * 0.12);
+        break;
+      }
+      case 'drone': {
+        g.strokeCircle(x, y, r * 0.17);
+        for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+          g.lineBetween(x + dx * r * 0.17, y + dy * r * 0.17, x + dx * r * 0.42, y + dy * r * 0.42);
+          g.strokeCircle(x + dx * r * 0.5, y + dy * r * 0.5, r * 0.11);
+        }
+        break;
+      }
+      case 'hack': {
+        // Klammern um einen Blitz
+        g.beginPath().moveTo(x - r * 0.25, y - r * 0.5).lineTo(x - r * 0.5, y - r * 0.5).lineTo(x - r * 0.5, y + r * 0.5).lineTo(x - r * 0.25, y + r * 0.5).strokePath();
+        g.beginPath().moveTo(x + r * 0.25, y - r * 0.5).lineTo(x + r * 0.5, y - r * 0.5).lineTo(x + r * 0.5, y + r * 0.5).lineTo(x + r * 0.25, y + r * 0.5).strokePath();
+        g.beginPath().moveTo(x + r * 0.1, y - r * 0.4).lineTo(x - r * 0.12, y + r * 0.02).lineTo(x + r * 0.12, y + r * 0.02).lineTo(x - r * 0.1, y + r * 0.4).strokePath();
+        break;
+      }
+      case 'emp': {
+        g.fillCircle(x, y, r * 0.1);
+        for (const k of [0.28, 0.46, 0.64]) g.strokeCircle(x, y, r * k);
+        break;
+      }
+      case 'rockets': {
+        for (const dx of [-0.36, 0, 0.36]) {
+          const top = y - r * 0.5 + Math.abs(dx) * r * 0.5;
+          g.lineBetween(x + dx * r, top + r * 0.18, x + dx * r, y + r * 0.45);
+          g.fillTriangle(x + dx * r - r * 0.11, top + r * 0.22, x + dx * r + r * 0.11, top + r * 0.22, x + dx * r, top - r * 0.05);
+        }
+        break;
+      }
+      case 'armor': {
+        const pts = [];
+        for (let i = 0; i < 6; i++) pts.push({ x: x + Math.cos((i * Math.PI) / 3) * r * 0.55, y: y + Math.sin((i * Math.PI) / 3) * r * 0.55 });
+        g.strokePoints(pts, true);
+        g.lineBetween(x - r * 0.2, y, x + r * 0.2, y).lineBetween(x, y - r * 0.2, x, y + r * 0.2);
+        break;
+      }
+      case 'gauss': {
+        g.lineBetween(x - r * 0.6, y + r * 0.45, x + r * 0.6, y - r * 0.45);
+        g.fillTriangle(x + r * 0.62, y - r * 0.47, x + r * 0.3, y - r * 0.5, x + r * 0.5, y - r * 0.15);
+        for (const t of [-0.15, 0.1]) g.lineBetween(x + t * r - r * 0.12, y - t * r * 0.75 - r * 0.2, x + t * r + r * 0.12, y - t * r * 0.75 + r * 0.2);
+        break;
+      }
+      case 'barrage': {
+        for (const [dx, dy] of [[-0.35, -0.2], [0.3, -0.3], [0, 0.35]] as const) {
+          const cx = x + dx * r;
+          const cy = y + dy * r;
+          g.lineBetween(cx - r * 0.13, cy - r * 0.13, cx + r * 0.13, cy + r * 0.13).lineBetween(cx - r * 0.13, cy + r * 0.13, cx + r * 0.13, cy - r * 0.13);
+          g.strokeCircle(cx, cy, r * 0.2);
+        }
+        break;
+      }
+      case 'ally': {
+        g.strokeCircle(x - r * 0.2, y - r * 0.12, r * 0.22);
+        g.beginPath().arc(x - r * 0.2, y + r * 0.5, r * 0.34, Math.PI, 0).strokePath();
+        g.strokeCircle(x + r * 0.28, y - r * 0.02, r * 0.17);
+        g.beginPath().arc(x + r * 0.28, y + r * 0.5, r * 0.26, Math.PI, 0).strokePath();
+        break;
+      }
+      case 'inspire': {
+        const pts = [];
+        for (let i = 0; i < 10; i++) {
+          const rad = i % 2 === 0 ? r * 0.55 : r * 0.24;
+          const a = -Math.PI / 2 + (i * Math.PI) / 5;
+          pts.push({ x: x + Math.cos(a) * rad, y: y + Math.sin(a) * rad });
+        }
+        g.strokePoints(pts, true);
+        break;
+      }
+      case 'talents': {
+        // Drei verbundene Knoten
+        const pts = [[0, -0.42], [-0.4, 0.3], [0.4, 0.3]] as const;
+        g.lineBetween(x, y - r * 0.42, x - r * 0.4, y + r * 0.3).lineBetween(x, y - r * 0.42, x + r * 0.4, y + r * 0.3);
+        for (const [dx, dy] of pts) g.fillCircle(x + dx * r, y + dy * r, r * 0.13);
         break;
       }
       case 'bag': {

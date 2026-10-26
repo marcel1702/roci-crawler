@@ -10,7 +10,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **3** | Dungeon-Generator ✅ | Seeded Räume-und-Gänge-Generator, Spawn-Tabellen, Truhen, Missionsziel (Ausgang/Boss), Kamera/Nebel, Ergebnisbildschirm | Jeder Seed erzeugt einen lösbaren Dungeon (automatisch geprüft); eine Mission lässt sich von Start bis Ziel spielen | M |
 | **4** | Beute, Inventar, Speichern ✅ | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
 | **5** | Rocinante-Hub ✅ | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
-| **6** | Klassen & Talente | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
+| **6** | Klassen & Talente ✅ | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
 | **7** | Schwerelosigkeit | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
 | **8** | Akt 1: Ceres/Tycho | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
 | **9** | Akt 2: Eros | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
@@ -77,4 +77,15 @@ Umgesetzt (Details: GDD, Abschnitte 4, 11, 12):
 - Tests: Hub-Karte (Stationen erreichbar), Aufträge, Händler und Kauf, Spielstand-Plätze und Übernahme.
 
 Bewusst **nicht** enthalten: Missionen mit Handlung und Akt-Auswahl (kommen mit den Akten, Meilensteine 8–10), Werkbank zum Verbessern, echte Dialoge der Besatzung (die Sprüche sind Platzhalter), Klassenwechsel innerhalb eines Spielstands.
+
+## Meilenstein 6: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitte 5 und 10):
+- **Alle vier Klassen spielbar:** Amos (Nahkampf), Naomi, Bobbie, Holden (Fernkampf mit Geschossen, Sichtlinie, Krit). 9 neue Fähigkeiten in `src/abilities`.
+- **Neue Kampfmechaniken:** Flächenschaden mit Warnzonen, durchschlagender Strahl, Hack (betäubt, erhöht erlittenen Schaden), zeitlich begrenzte Verstärkungen (Panzerung/Tempo/Schaden), **Verbündete** (Kampfdrohne, Amos greift ein).
+- **Talentbaum** (`core/talents.ts`, `data/talents.ts`): 3 Zweige × 4 Reihen je Klasse, Freischaltung durch Punkte im Zweig, Zurücksetzen im Hub gegen Credits; Oberfläche (`scenes/TalentScene.ts`) für Quer- und Hochformat; Talent-Taste mit Punkte-Zähler im HUD. Gespeicherte Talente werden beim Laden gegen den Baum geprüft.
+- Klassenwahl auf der Titelseite jetzt mit allen vier Figuren; `?class=naomi` zum Testen.
+- Tests: Talentregeln (Freischaltung, Prüfen gespeicherter Daten), Konsistenz aller Klassen/Fähigkeiten/Talente/Texte, Geometrie-Helfer; Browser-Prüfung aller 12 Fähigkeiten und des Talentbaums.
+
+Bewusst **nicht** enthalten: klassenspezifische Waffen, die Schwerelosigkeit (Meilenstein 7, mit Rückstoß für Bobbie und Naomis Talenten), Balancing über alle Klassen (Meilenstein 11), Fähigkeiten-Beschreibungen als Tooltips.
 
