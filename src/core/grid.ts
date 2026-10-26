@@ -1,6 +1,6 @@
 import type { Vec2 } from './math';
 
-export const TILE = { floor: 0, wall: 1 } as const;
+export const TILE = { floor: 0, wall: 1, /** Begehbarer Boden ohne Schwerkraft. */ zeroG: 2 } as const;
 export type TileId = (typeof TILE)[keyof typeof TILE];
 
 /** Kachelraster der Spielwelt. Alles außerhalb des Rasters zählt als Wand. */
@@ -38,6 +38,20 @@ export class TileGrid {
 
   isWalkable(col: number, row: number): boolean {
     return !this.isSolid(col, row);
+  }
+
+  /** True auf Kacheln, auf denen es keine Schwerkraft gibt. */
+  isZeroG(col: number, row: number): boolean {
+    return this.get(col, row) === TILE.zeroG;
+  }
+
+  /** Markiert ein Rechteck begehbarer Kacheln als schwerelos. */
+  markZeroG(x: number, y: number, w: number, h: number): void {
+    for (let row = y; row < y + h; row++) {
+      for (let col = x; col < x + w; col++) {
+        if (this.inBounds(col, row) && this.isWalkable(col, row)) this.cells[row * this.cols + col] = TILE.zeroG;
+      }
+    }
   }
 
   /** Wand, die an mindestens ein begehbares Feld grenzt (auch diagonal). Alle anderen Wände sind unsichtbares "Gestein". */

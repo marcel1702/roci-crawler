@@ -10,7 +10,8 @@ import type { MissionConfig } from './MissionScene';
  * Erzeugt die Platzhalter-Grafik und startet die Titelseite.
  *
  * Abkürzungen zum Ausprobieren (überspringen die Titelseite):
- * - `?seed=123` startet genau diesen Dungeon, `?mode=arena` die Testarena (beides mit Spielstand 1),
+ * - `?seed=123` startet genau diesen Dungeon (`&zerog=1`: jeder Kampfraum schwerelos, `&zerog=0`: keiner),
+ *   `?mode=arena` die Testarena (beides mit Spielstand 1),
  * - `?slot=2` lädt Spielstand 2 (oder beginnt dort mit Amos) und geht in den Hub,
  * - `?reset` beginnt in Spielstand 1 neu,
  * - `?class=naomi` (amos, naomi, bobbie, holden) wählt die Figur, wenn dabei ein neuer Spielstand entsteht.
@@ -45,5 +46,7 @@ export class BootScene extends Phaser.Scene {
 function missionFromParams(params: URLSearchParams): MissionConfig | null {
   if (params.get('mode') === 'arena') return { kind: 'arena' };
   const seed = Number.parseInt(params.get('seed') ?? '', 10);
-  return Number.isFinite(seed) ? { kind: 'dungeon', seed } : null;
+  if (!Number.isFinite(seed)) return null;
+  const zeroG = Number.parseFloat(params.get('zerog') ?? '');
+  return Number.isFinite(zeroG) ? { kind: 'dungeon', seed, zeroG } : { kind: 'dungeon', seed };
 }

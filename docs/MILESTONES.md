@@ -11,7 +11,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **4** | Beute, Inventar, Speichern ✅ | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
 | **5** | Rocinante-Hub ✅ | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
 | **6** | Klassen & Talente ✅ | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
-| **7** | Schwerelosigkeit | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
+| **7** | Schwerelosigkeit ✅ | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
 | **8** | Akt 1: Ceres/Tycho | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
 | **9** | Akt 2: Eros | Mutanten-Gegner, Schwerelosigkeits-Sektionen, Boss | Akt 2 komplett durchspielbar | L |
 | **10** | Akt 3: Ganymed/Ringtore | Hybrid-Soldaten, Finale am Ringtor, Abspann | Das gesamte Spiel ist in 3–5 Stunden durchspielbar | L |
@@ -88,4 +88,16 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitte 5 und 10):
 - Tests: Talentregeln (Freischaltung, Prüfen gespeicherter Daten), Konsistenz aller Klassen/Fähigkeiten/Talente/Texte, Geometrie-Helfer; Browser-Prüfung aller 12 Fähigkeiten und des Talentbaums.
 
 Bewusst **nicht** enthalten: klassenspezifische Waffen, die Schwerelosigkeit (Meilenstein 7, mit Rückstoß für Bobbie und Naomis Talenten), Balancing über alle Klassen (Meilenstein 11), Fähigkeiten-Beschreibungen als Tooltips.
+
+## Meilenstein 7: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitt 8):
+- **Physik** (`core/zerog.ts`, rein und getestet): Schub, Höchsttempo, Dämpfung, Bremse, Abprallen an Wänden (Geschwindigkeit begrenzt, nie durch Wände), Stoß. `Actor` setzt sie auf schwerelosen Kacheln um (`tickFloat`); beim Betreten/Verlassen wechselt die Bewegung sauber zwischen Gehen und Gleiten.
+- **Karte:** dritte Kachelart `zeroG` (begehbar, violett), `z` in Level-Texten, `Room.zeroG` im Generator (nur Kampf-/Schatzräume, `zeroGChance`), Minikarte zeigt sie.
+- **Steuerung:** Schub zum nächsten Wegpunkt, **Stabilisieren**-Taste (unten links, Leertaste), Angriffshilfe beim Zielen, Schwung nach Sturmangriff. Hinweis beim ersten Betreten.
+- **Rückstoß:** Treffer (Nahkampf, Geschoss, Fläche, Fähigkeiten) und Schüsse stoßen weg; Bobbie und Gauß-Strahl stark. Gegner und Verbündete steuern per Geschwindigkeits-Angleichung.
+- **Gürtler-Wert „Kontrolle“** (`zeroGControl`) auf Gürteln und in Naomis Talenten (Ingenieurin).
+- Dev-Parameter `?zerog=0..1`. Tests: Bewegung, Bremse, Abprallen (4000 Zufallsschritte bleiben im Raum), Stoß, angeglichener Schub, Raster, Dungeon (nie Start/Ausgang, lösbar, Karte unabhängig von der Wahrscheinlichkeit), Weg-Steuerung; Browser-Prüfung von Schub, Gleiten, Stoß, Bremse (Taste und Tipp), Kampf mit allen zwölf Fähigkeiten.
+
+Bewusst **nicht** enthalten: Zonen innerhalb von Räumen und Akt-eigene Häufigkeit (kommt mit Akt 2), Umgebungsgefahren (Infektionsflächen), Geräusche, echtes Balancing (Meilenstein 11).
 

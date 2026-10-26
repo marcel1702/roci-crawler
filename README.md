@@ -22,13 +22,14 @@ diese Adresse im Browser des Tablets öffnen. Rechner und Tablet müssen im selb
 
 - Auf den Boden tippen (oder halten und ziehen): dorthin laufen.
 - Gegner antippen: hinlaufen und angreifen.
+- In **schwerelosen Räumen** (violetter Boden) gleitet die Figur weiter, bis sie gegensteuert; Treffer und Schüsse stoßen zurück. Die Taste unten links (oder Leertaste) **stabilisiert** und bremst ab.
 - Die drei Kreise unten rechts sind die Fähigkeiten der gewählten Figur, der kleine grüne Kreis ist der Trank. Links oben öffnen Rucksack-Taste (`I`) und Talent-Taste (`T`, mit Zahl der freien Punkte) die Fenster.
 - Im Hub: Station antippen, die Figur läuft hin und benutzt sie. Die Missionskonsole bietet drei Aufträge, der Händler verkauft Ausrüstung, das Terminal wechselt den Spielstand.
 - Ziel jeder Mission: Luftschleuse finden, ihre Wächter besiegen, hineingehen. Truhen öffnen sich beim Herangehen.
 - Beute (farbige Kristalle) wird beim Darüberlaufen aufgehoben. Der Rucksack-Knopf links oben (oder Taste `I`) öffnet Ausrüstung und Inventar.
 - Der Spielstand (drei Plätze) wird automatisch im Browser gespeichert. Zum Testen: `?slot=2` lädt/beginnt Platz 2 direkt im Hub, `?reset` beginnt Platz 1 neu.
 - Am Desktop funktioniert die Maus genauso.
-- Zum Ausprobieren: `?seed=123` an die URL hängen lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen.
+- Zum Ausprobieren: `?seed=123` an die URL hängen lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen, `&zerog=1` macht jeden Kampfraum schwerelos.
 
 ## PWA und Installation auf dem Homescreen
 

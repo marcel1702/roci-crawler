@@ -13,6 +13,7 @@ import {
   TEXTURE_RES,
   TEXTURE_SCALE,
   TILE_SIZE,
+  ZEROG,
 } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { DIFFICULTY_RULES } from '../core/contracts';
@@ -61,7 +62,10 @@ const NEXT_WAVE_DELAY_MS = 3000;
 const MIN_SPAWN_DISTANCE = 170;
 
 /** `dungeon`: zufällige Mission mit Ausgang; `arena`: Testarena mit endlosen Gegnerwellen (zum Ausprobieren). */
-export type MissionConfig = { kind: 'dungeon'; seed: number; difficulty?: Difficulty } | { kind: 'arena' };
+export type MissionConfig =
+  /** `zeroG`: Wahrscheinlichkeit schwereloser Räume (ohne Angabe der Standardwert des Akts). */
+  | { kind: 'dungeon'; seed: number; difficulty?: Difficulty; zeroG?: number }
+  | { kind: 'arena' };
 
 export interface MissionStats {
   timeMs: number;
@@ -213,7 +217,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   private pendingExit: Vec2 | null = null;
 
   private buildDungeon(seed: number): void {
-    const dungeon = generateDungeon(seed, TILE_SIZE);
+    const zeroGChance = this.config.kind === 'dungeon' ? (this.config.zeroG ?? ZEROG.roomChance) : 0;
+    const dungeon = generateDungeon(seed, TILE_SIZE, { zeroGChance });
     // Aufteilung und Gegner hängen nur vom Seed ab; der Kampf-Zufall (Schaden) bleibt davon getrennt.
     const plan = planMission(dungeon, ACT1_SPAWNS, createRng(seed ^ 0x9e3779b9));
     this.grid = dungeon.grid;

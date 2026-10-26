@@ -9,6 +9,7 @@ export const MINIMAP_KEY = 'minimap';
 /** Nebelfarbe = Hintergrundfarbe (0x0b1020), damit Unentdecktes wie leerer Raum wirkt. */
 const FOG_RGB = [11, 16, 32] as const;
 const MINI_FLOOR = [92, 112, 156] as const;
+const MINI_ZEROG = [128, 108, 205] as const;
 const MINI_WALL = [150, 164, 196] as const;
 
 /**
@@ -103,7 +104,7 @@ export class FogSystem {
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         if (!this.explored.isExplored(col, row)) continue;
-        const rgb = this.grid.isWalkable(col, row) ? MINI_FLOOR : this.grid.isWallEdge(col, row) ? MINI_WALL : null;
+        const rgb = this.grid.isZeroG(col, row) ? MINI_ZEROG : this.grid.isWalkable(col, row) ? MINI_FLOOR : this.grid.isWallEdge(col, row) ? MINI_WALL : null;
         if (!rgb) continue;
         const i = (row * cols + col) * 4;
         image.data[i] = rgb[0];

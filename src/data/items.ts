@@ -22,6 +22,7 @@ export const ITEM_RULES: ItemRules = {
     { stat: 'potionHealPct', range: { min: 0.05, max: 0.1 }, weight: 1.5, favored: ['earth'] },
     { stat: 'moveSpeedPct', range: { min: 0.03, max: 0.06 }, weight: 2, favored: ['belt'] },
     { stat: 'cooldownReduction', range: { min: 0.03, max: 0.06 }, weight: 2, favored: ['belt'] },
+    { stat: 'zeroGControl', range: { min: 0.08, max: 0.16 }, weight: 2, favored: ['belt'] },
     { stat: 'lifesteal', range: { min: 0.01, max: 0.02 }, weight: 0.7 },
   ],
   originBonus: {
@@ -36,6 +37,7 @@ export const ITEM_RULES: ItemRules = {
     belt: [
       { stat: 'moveSpeedPct', range: { min: 0.02, max: 0.04 } },
       { stat: 'cooldownReduction', range: { min: 0.02, max: 0.04 } },
+      { stat: 'zeroGControl', range: { min: 0.06, max: 0.12 } },
     ],
   },
   originPrimaryFactor: { earth: 1.2, mars: 1, belt: 0.9 },
@@ -48,7 +50,7 @@ export const ITEM_RULES: ItemRules = {
   setBonus: {
     earth: { maxHpPct: 0.1 },
     mars: { damagePct: 0.1 },
-    belt: { moveSpeedPct: 0.08, cooldownReduction: 0.08 },
+    belt: { moveSpeedPct: 0.08, cooldownReduction: 0.08, zeroGControl: 0.2 },
   },
   bases: {
     weapon: ['crowbar', 'baton', 'magpistol'],

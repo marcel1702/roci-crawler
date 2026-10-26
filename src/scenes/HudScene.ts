@@ -46,6 +46,8 @@ export class HudScene extends Phaser.Scene {
   private potionButton!: AbilityButton;
   private bagButton!: AbilityButton;
   private talentButton!: AbilityButton;
+  private brakeButton!: AbilityButton;
+  private brakeShown = false;
   private hint!: Phaser.GameObjects.Text;
   private banner!: Phaser.GameObjects.Text;
   private overlayShade!: Phaser.GameObjects.Rectangle;
@@ -98,6 +100,10 @@ export class HudScene extends Phaser.Scene {
     this.bagButton.setIcon('bag');
     this.talentButton = new AbilityButton(this, COLORS.uiDim);
     this.talentButton.setIcon('talents');
+    this.brakeButton = new AbilityButton(this, 0x9fd8ff);
+    this.brakeButton.setIcon('brake');
+    this.brakeButton.setVisible(false);
+    this.brakeShown = false;
 
     this.hint = this.makeText({ color: '#dbe4f5', align: 'center' }).setOrigin(0.5, 1).setText(t('hud.hint.controls'));
     this.banner = this.makeText({ fontStyle: 'bold', color: '#ffe08a', align: 'center' }).setOrigin(0.5).setVisible(false);
@@ -118,6 +124,7 @@ export class HudScene extends Phaser.Scene {
     this.input.on(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
     this.input.keyboard?.on('keydown-I', this.openInventory, this);
     this.input.keyboard?.on('keydown-T', this.openTalents, this);
+    this.input.keyboard?.on('keydown-SPACE', this.stabilize, this);
     const on = this.game.events;
     on.on(GAME_EVENTS.missionReady, this.onMissionReady, this);
     on.on(GAME_EVENTS.hubReady, this.onHubReady, this);
@@ -127,11 +134,13 @@ export class HudScene extends Phaser.Scene {
     on.on(GAME_EVENTS.playerDied, this.onPlayerDied, this);
     on.on(GAME_EVENTS.objectiveChanged, this.onObjectiveChanged, this);
     on.on(GAME_EVENTS.missionCompleted, this.onMissionCompleted, this);
+    on.on(GAME_EVENTS.zeroGEntered, this.onZeroGEntered, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
       this.input.keyboard?.off('keydown-I', this.openInventory, this);
       this.input.keyboard?.off('keydown-T', this.openTalents, this);
+      this.input.keyboard?.off('keydown-SPACE', this.stabilize, this);
       on.off(GAME_EVENTS.missionReady, this.onMissionReady, this);
       on.off(GAME_EVENTS.hubReady, this.onHubReady, this);
       on.off(GAME_EVENTS.waveStarted, this.onWaveStarted, this);
@@ -140,6 +149,7 @@ export class HudScene extends Phaser.Scene {
       on.off(GAME_EVENTS.playerDied, this.onPlayerDied, this);
       on.off(GAME_EVENTS.objectiveChanged, this.onObjectiveChanged, this);
       on.off(GAME_EVENTS.missionCompleted, this.onMissionCompleted, this);
+      on.off(GAME_EVENTS.zeroGEntered, this.onZeroGEntered, this);
     });
 
     // Beim ersten Start läuft MissionScene.create() vor diesem create(): das Ereignis wäre verpasst.
@@ -188,6 +198,11 @@ export class HudScene extends Phaser.Scene {
       ...cooldownState(player.potionCooldown, player.potions > 0 && player.hp < player.stats.maxHp),
       badge: player.potions,
     });
+    if (player.isFloating !== this.brakeShown) {
+      this.brakeShown = player.isFloating;
+      this.brakeButton.setVisible(this.brakeShown);
+    }
+    if (this.brakeShown) this.brakeButton.setState(cooldownState(player.brakeCooldown, true));
 
     const target = player.attackTarget;
     if (target && !target.isDead) this.shownTargetUntil = time + TARGET_LINGER_MS;
@@ -206,7 +221,7 @@ export class HudScene extends Phaser.Scene {
   isOverUi(screenX: number, screenY: number): boolean {
     const pad = 10 * this.u;
     const common = [this.bagButton, this.talentButton];
-    const buttons = this.world === 'hub' ? common : [...this.abilityButtons, this.potionButton, ...common];
+    const buttons = this.world === 'hub' ? common : [...this.abilityButtons, this.potionButton, this.brakeButton, ...common];
     return buttons.some((button) => button.contains(screenX, screenY, pad));
   }
 
@@ -233,7 +248,22 @@ export class HudScene extends Phaser.Scene {
     } else if (this.potionButton.contains(pointer.x, pointer.y, pad)) {
       this.potionButton.press();
       player.usePotion();
+    } else if (this.brakeButton.contains(pointer.x, pointer.y, pad)) {
+      this.brakeButton.press();
+      player.stabilize();
     }
+  }
+
+  /** „Stabilisieren“ per Taste (Leertaste); nur in der Schwerelosigkeit. */
+  private stabilize(): void {
+    if (this.world === 'mission' && !this.locked && !this.overlayOpen()) this.player?.stabilize();
+  }
+
+  private onZeroGEntered(): void {
+    this.showBanner(t('hud.zeroG.banner'), '#b9a6ff');
+    this.hint.setText(t('hud.zeroG.hint')).setAlpha(1).setVisible(true);
+    this.tweens.killTweensOf(this.hint);
+    this.tweens.add({ targets: this.hint, alpha: 0, delay: HINT_VISIBLE_MS, duration: 800 });
   }
 
   /** True, solange Rucksack, Händler oder Auftragswahl offen sind: dann gehören alle Tipps dem Fenster. */
@@ -270,6 +300,8 @@ export class HudScene extends Phaser.Scene {
     this.setOverlayVisible(false);
     this.banner.setVisible(false);
     this.setCombatUi(false);
+    this.brakeShown = false;
+    this.brakeButton.setVisible(false);
     this.waveText.setVisible(false);
     this.objectiveText.setVisible(false);
     this.creditsText.setVisible(true);
@@ -285,6 +317,8 @@ export class HudScene extends Phaser.Scene {
     this.mission = this.scene.get(SCENE_KEYS.mission) as MissionScene;
     this.world = 'mission';
     this.setCombatUi(true);
+    this.brakeShown = false;
+    this.brakeButton.setVisible(false);
     this.creditsText.setVisible(false);
     this.hint.setText(t('hud.hint.controls'));
     this.locked = false;
@@ -477,6 +511,9 @@ export class HudScene extends Phaser.Scene {
       this.abilityButtons[i]?.layout(cx + Math.cos(a) * arc, cy + Math.sin(a) * arc, radius);
     });
     this.potionButton.layout(cx, cy, radius * 0.8);
+    // „Stabilisieren“: unten links, im Daumenbereich der linken Hand.
+    const brakeR = radius * 0.85;
+    this.brakeButton.layout(left + brakeR, bottom - brakeR, brakeR);
 
     // Texte und Overlays
     this.hint.setFontSize(Math.round(14 * u)).setPosition(width / 2, bottom).setWordWrapWidth(width * 0.55 - 2 * margin);

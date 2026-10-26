@@ -5,9 +5,9 @@ import type { Vec2 } from '../core/math';
 import { TEXTURE_KEYS, TEXTURE_SCALE } from '../config/constants';
 import type { AbilityContext, AbilityDef } from './types';
 
-const SALVO = { range: 340, clusterRadius: 70, rockets: 3, rocketDelayMs: 220, flightMs: 600, spread: 30, radius: 56, damageMultiplier: 1.1 } as const;
+const SALVO = { range: 340, clusterRadius: 70, rockets: 3, rocketDelayMs: 220, flightMs: 600, spread: 30, radius: 56, damageMultiplier: 1.1, knockback: 110 } as const;
 const SEAL = { durationMs: 5000, damageTaken: 0.3, speed: 0.5 } as const;
-const GAUSS = { range: 420, length: 380, damageMultiplier: 2.6, width: 8 } as const;
+const GAUSS = { range: 420, length: 380, damageMultiplier: 2.6, width: 8, knockback: 160, recoil: 190 } as const;
 const PURPLE = 0xb98bff;
 
 /** Mittelpunkt der dichtesten Gegnergruppe in Reichweite, sonst null. */
@@ -57,7 +57,7 @@ const raketensalve: AbilityDef = {
         if (player.isDead) return;
         launchRocket(ctx, impact, SALVO.flightMs, () => {
           world.combat.ring(impact.x, impact.y, radius, 0xffb347, 260);
-          world.combat.areaDamage(player, impact.x, impact.y, radius, SALVO.damageMultiplier * (1 + boost.damage), world.enemies);
+          world.combat.areaDamage(player, impact.x, impact.y, radius, SALVO.damageMultiplier * (1 + boost.damage), world.enemies, 0, SALVO.knockback);
           player.scene.cameras.main.shake(80, 0.004);
         });
       });
@@ -104,11 +104,12 @@ const gauss: AbilityDef = {
     const ex = player.x + Math.cos(angle) * length;
     const ey = player.y + Math.sin(angle) * length;
     player.faceToward(aimed.x, aimed.y);
+    player.pushAlong(-Math.cos(angle), -Math.sin(angle), GAUSS.recoil);
 
     for (const enemy of world.enemies) {
       if (enemy.isDead) continue;
       if (distanceToSegment(enemy.x, enemy.y, player.x, player.y, ex, ey) <= enemy.radius + GAUSS.width) {
-        world.combat.attack(player, enemy, GAUSS.damageMultiplier * (1 + boost.damage));
+        world.combat.attack(player, enemy, GAUSS.damageMultiplier * (1 + boost.damage), GAUSS.knockback);
       }
     }
 

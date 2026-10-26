@@ -17,6 +17,8 @@ export interface Room {
   links: number[];
   /** Anzahl Räume vom Startraum (0 = Startraum). */
   depth: number;
+  /** Raum ohne Schwerkraft (nie Start- oder Ausgangsraum). */
+  zeroG: boolean;
 }
 
 export interface Dungeon {
@@ -34,6 +36,8 @@ export interface DungeonOptions {
   maxRoomSize: number;
   /** Breite der Gänge in Kacheln. */
   corridorWidth: number;
+  /** Wahrscheinlichkeit, dass ein Kampf- oder Schatzraum schwerelos ist. */
+  zeroGChance: number;
 }
 
 export const DEFAULT_DUNGEON: DungeonOptions = {
@@ -44,6 +48,7 @@ export const DEFAULT_DUNGEON: DungeonOptions = {
   minRoomSize: 6,
   maxRoomSize: 11,
   corridorWidth: 2,
+  zeroGChance: 0,
 };
 
 const ROOM_PADDING = 3;
@@ -84,7 +89,12 @@ export function generateDungeon(seed: number, tileSize: number, options: Partial
         if (otherId > room.id) carveCorridor(cells, opts, room, rooms[otherId] as Room, rng);
       }
     }
-    return { seed, grid: new TileGrid(opts.cols, opts.rows, tileSize, cells), rooms };
+    const grid = new TileGrid(opts.cols, opts.rows, tileSize, cells);
+    for (const room of rooms) {
+      room.zeroG = (room.role === 'combat' || room.role === 'treasure') && rng.chance(opts.zeroGChance);
+      if (room.zeroG) grid.markZeroG(room.x, room.y, room.w, room.h);
+    }
+    return { seed, grid, rooms };
   }
   throw new Error(`Kein gültiger Dungeon für Seed ${seed} gefunden`);
 }
@@ -102,7 +112,7 @@ function placeRooms(rng: Rng, opts: DungeonOptions): Room[] {
       (r) =>
         x < r.x + r.w + ROOM_PADDING && x + w + ROOM_PADDING > r.x && y < r.y + r.h + ROOM_PADDING && y + h + ROOM_PADDING > r.y,
     );
-    if (!overlaps) rooms.push({ id: rooms.length, x, y, w, h, role: 'combat', links: [], depth: 0 });
+    if (!overlaps) rooms.push({ id: rooms.length, x, y, w, h, role: 'combat', links: [], depth: 0, zeroG: false });
   }
   return rooms;
 }

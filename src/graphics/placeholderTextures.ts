@@ -40,10 +40,10 @@ function drawTexture(
   g.destroy();
 }
 
-/** Streifen mit zwei Kacheln: Index 0 = Boden, Index 1 = Wand. */
+/** Streifen mit drei Kacheln: Index 0 = Boden, Index 1 = Wand, Index 2 = schwereloser Boden. */
 function createTileset(scene: Phaser.Scene): void {
   const s = TILE_SIZE;
-  drawTexture(scene, TEXTURE_KEYS.tiles, s * 2, s, (g) => {
+  drawTexture(scene, TEXTURE_KEYS.tiles, s * 3, s, (g) => {
     // Boden
     g.fillStyle(COLORS.floor, 1).fillRect(0, 0, s, s);
     g.lineStyle(1, COLORS.floorLine, 1).strokeRect(0.5, 0.5, s - 1, s - 1);
@@ -63,6 +63,14 @@ function createTileset(scene: Phaser.Scene): void {
     ] as const) {
       g.fillCircle(x + px, py, 1.6);
     }
+
+    // Schwereloser Boden: violett, mit diagonalem Raster, damit er auch ohne Farbe erkennbar bleibt.
+    const z = s * 2;
+    g.fillStyle(COLORS.floorZeroG, 1).fillRect(z, 0, s, s);
+    g.lineStyle(1, COLORS.floorZeroGLine, 1).strokeRect(z + 0.5, 0.5, s - 1, s - 1);
+    g.lineStyle(1, COLORS.floorZeroGLine, 0.5);
+    g.lineBetween(z + 3, 3, z + s - 3, s - 3).lineBetween(z + s - 3, 3, z + 3, s - 3);
+    g.fillStyle(COLORS.floorZeroGLine, 1).fillCircle(z + s / 2, s / 2, 1.6);
   });
 }
 

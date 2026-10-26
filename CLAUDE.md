@@ -71,7 +71,8 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 - **Entities** heißen ihre Update-Methode `tick()` (Phasers `update` ist belegt) und werden von der Szene aufgerufen.
 - **Texte:** Nie sichtbare Texte im Code. Immer `t('schluessel')`; Schlüssel in `src/i18n/de.ts`. Daten verweisen mit `TextKey`.
 - **Zufall:** Nur über `Rng` aus `core/rng.ts` (seeded), nie `Math.random()`, damit Dungeons und Beute reproduzierbar sind.
-- **Kollision/Bewegung:** Eigene Kreis-gegen-Kachel-Kollision (`core/collision.ts`), keine Phaser-Physik. Neue Bewegungsarten (Schwerelosigkeit) erweitern `Actor.moveBy` bzw. den Weg-/Geschwindigkeitsteil, nicht die Kollision.
+- **Kollision/Bewegung:** Eigene Kreis-gegen-Kachel-Kollision (`core/collision.ts`), keine Phaser-Physik. Neue Bewegungsarten erweitern `Actor` (Weg-/Geschwindigkeitsteil), nicht die Kollision.
+- **Schwerelosigkeit:** Kachelart `TILE.zeroG`, Physik in `core/zerog.ts` (`stepZeroG`, rein). `Actor.tickFloat` läuft in `tickTimers`; der Schub für das nächste Bild wird in `followPath`/`floatToward` gesetzt (Spielerin: `directThrust`, Gegner: angeglichene Geschwindigkeit). **Stöße immer über `Actor.knockFrom`/`pushAlong`** (wirken nur beim Schweben): Treffer über `CombatSystem.attack/areaDamage/…` (Parameter `knockback`), Geschosse über `ProjectileSpawn.knockback`, Rückstoß über `BasicAttack.recoil`. Neue Fähigkeiten geben daher einen Stoß mit an, statt `x/y` selbst zu verschieben. Zahlen: `KNOCKBACK` und `ZEROG` in `config/constants.ts`.
 - **Kein `any`**, kein Ignorieren von Typfehlern. Kommentare nur, wo das *Warum* nicht offensichtlich ist.
 - **Speicherstände** (ab Meilenstein 4): versioniertes Schema mit Migrationsfunktionen; nie das Format ändern, ohne zu migrieren.
 

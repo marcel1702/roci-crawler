@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { AbilityIcon } from '../abilities';
 import { COLORS } from '../config/palette';
 
-export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents';
+export type ButtonIcon = AbilityIcon | 'potion' | 'bag' | 'talents' | 'brake';
 
 export interface ButtonState {
   /** Verbleibender Anteil der Abklingzeit, 1 = gerade ausgelöst, 0 = bereit. */
@@ -215,6 +215,18 @@ export class AbilityButton {
           pts.push({ x: x + Math.cos(a) * rad, y: y + Math.sin(a) * rad });
         }
         g.strokePoints(pts, true);
+        break;
+      }
+      case 'brake': {
+        // Vier Pfeilspitzen zeigen auf einen Punkt: „anhalten“.
+        g.fillCircle(x, y, r * 0.13);
+        for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as const) {
+          const px = -dy;
+          const py = dx;
+          const tipX = x + dx * r * 0.3;
+          const tipY = y + dy * r * 0.3;
+          g.fillTriangle(tipX, tipY, x + dx * r * 0.62 + px * r * 0.17, y + dy * r * 0.62 + py * r * 0.17, x + dx * r * 0.62 - px * r * 0.17, y + dy * r * 0.62 - py * r * 0.17);
+        }
         break;
       }
       case 'talents': {

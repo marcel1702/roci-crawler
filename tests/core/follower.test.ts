@@ -52,4 +52,25 @@ describe('PathFollower', () => {
     expect(follower.active).toBe(false);
     expect(follower.step(0, 0, 100, 1)).toEqual({ dx: 0, dy: 0 });
   });
+
+  describe('steer (Schwerelosigkeit)', () => {
+    it('liefert den ersten Wegpunkt außerhalb der Reichweite und überspringt nahe', () => {
+      const follower = new PathFollower();
+      follower.setPath([
+        { x: 3, y: 0 },
+        { x: 50, y: 0 },
+        { x: 50, y: 60 },
+      ]);
+      expect(follower.steer(0, 0, 8)).toEqual({ x: 50, y: 0 });
+      expect(follower.steer(48, 0, 8)).toEqual({ x: 50, y: 60 });
+      expect(follower.active).toBe(true);
+    });
+
+    it('liefert null und beendet den Weg am Ziel', () => {
+      const follower = new PathFollower();
+      follower.setPath([{ x: 10, y: 10 }]);
+      expect(follower.steer(12, 9, 8)).toBeNull();
+      expect(follower.active).toBe(false);
+    });
+  });
 });

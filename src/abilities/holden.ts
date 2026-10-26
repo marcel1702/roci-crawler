@@ -2,7 +2,7 @@ import { ALLIES } from '../data/allies';
 import type { AbilityDef } from './types';
 import { clusterTarget } from './bobbie';
 
-const BARRAGE = { range: 340, clusterRadius: 70, shells: 4, intervalMs: 300, warnMs: 800, spread: 45, radius: 58, damageMultiplier: 1.0 } as const;
+const BARRAGE = { range: 340, clusterRadius: 70, shells: 4, intervalMs: 300, warnMs: 800, spread: 45, radius: 58, damageMultiplier: 1.0, knockback: 90 } as const;
 const INSPIRE = { healFraction: 0.35, durationMs: 6000, damage: 1.25, speed: 1.25 } as const;
 const ORANGE = 0xffb347;
 const GREEN = 0x6dff9a;
@@ -28,7 +28,7 @@ const sperrfeuer: AbilityDef = {
       player.scene.time.delayedCall(BARRAGE.warnMs + i * BARRAGE.intervalMs, () => {
         if (player.isDead) return;
         world.combat.ring(x, y, radius, ORANGE, 260);
-        world.combat.areaDamage(player, x, y, radius, BARRAGE.damageMultiplier * (1 + boost.damage), world.enemies);
+        world.combat.areaDamage(player, x, y, radius, BARRAGE.damageMultiplier * (1 + boost.damage), world.enemies, 0, BARRAGE.knockback);
         player.scene.cameras.main.shake(70, 0.004);
       });
     }

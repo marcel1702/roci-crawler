@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CRIT_MULTIPLIER, MISSION_EVENTS } from '../config/constants';
+import { CRIT_MULTIPLIER, KNOCKBACK, MISSION_EVENTS } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { rollDamage } from '../core/combat';
 import type { Rng } from '../core/rng';
@@ -34,7 +34,10 @@ export class CombatSystem {
       crit,
       tint: 0x9fe8ff,
       radius: 3.5,
+      knockback: KNOCKBACK.projectile,
     });
+    // Rückstoß in der Schwerelosigkeit: jeder Schuss schiebt die Schützin entgegen.
+    attacker.pushAlong(-Math.cos(angle), -Math.sin(angle), attacker.basic.recoil ?? KNOCKBACK.recoil);
     return amount;
   }
 
@@ -43,7 +46,7 @@ export class CombatSystem {
 
   /**
    * Flächenschaden um einen Punkt gegen alle `targets` im Radius (bis zum Rand der Ziele gemessen).
-   * Liefert die Zahl der Getroffenen.
+   * In der Schwerelosigkeit stößt die Druckwelle die Getroffenen vom Mittelpunkt weg. Liefert die Zahl der Getroffenen.
    */
   areaDamage(
     source: Actor,
@@ -53,11 +56,13 @@ export class CombatSystem {
     multiplier: number,
     targets: readonly Actor[],
     stunMs = 0,
+    knockback: number = KNOCKBACK.area,
   ): number {
     let hits = 0;
     for (const target of targets) {
       if (target.isDead || Math.hypot(target.x - x, target.y - y) - target.radius > radius) continue;
-      this.attack(source, target, multiplier);
+      this.attack(source, target, multiplier, 0);
+      target.knockFrom(x, y, knockback);
       if (stunMs > 0) target.stun(stunMs);
       hits++;
     }
@@ -71,11 +76,16 @@ export class CombatSystem {
     return this.attack(attacker, target, multiplier);
   }
 
-  /** Würfelt einen Treffer (mit Chance auf Kritisch) und wendet ihn an. Liefert den tatsächlichen Schaden. */
-  attack(attacker: Actor, target: Actor, multiplier = 1): number {
+  /**
+   * Würfelt einen Treffer (mit Chance auf Kritisch) und wendet ihn an. Liefert den tatsächlichen Schaden.
+   * `knockback` stößt das Ziel in der Schwerelosigkeit vom Angreifer weg.
+   */
+  attack(attacker: Actor, target: Actor, multiplier = 1, knockback: number = KNOCKBACK.melee): number {
     const crit = attacker.critChance > 0 && this.rng.chance(attacker.critChance);
     const amount = Math.round(rollDamage(attacker.stats, this.rng) * multiplier * attacker.damageMultiplier * (crit ? CRIT_MULTIPLIER : 1));
-    return this.dealDamage(attacker, target, amount, crit);
+    const dealt = this.dealDamage(attacker, target, amount, crit);
+    if (knockback > 0) target.knockFrom(attacker.x, attacker.y, knockback);
+    return dealt;
   }
 
   /** Würfelt Schaden aus den Werten des Angreifers, ohne ihn anzuwenden (für Geschosse). */

@@ -41,9 +41,9 @@ export const TALENTS: Record<ClassId, TalentTree> = {
       n('naomi.h3', 1, 3, 3, { ability: { slot: 2, area: 0.12, damage: 0.1 } }),
       n('naomi.h4', 1, 4, 1, { mods: { critChance: 0.1 }, ability: { slot: 1, cooldown: 0.2 } }),
       n('naomi.i1', 2, 1, 3, { mods: { damagePct: 0.05 } }),
-      n('naomi.i2', 2, 2, 3, { mods: { moveSpeedPct: 0.04 } }),
+      n('naomi.i2', 2, 2, 3, { mods: { moveSpeedPct: 0.04, zeroGControl: 0.1 } }),
       n('naomi.i3', 2, 3, 3, { mods: { maxHp: 15 } }),
-      n('naomi.i4', 2, 4, 1, { mods: { cooldownReduction: 0.1, moveSpeedPct: 0.08 } }),
+      n('naomi.i4', 2, 4, 1, { mods: { cooldownReduction: 0.1, moveSpeedPct: 0.08, zeroGControl: 0.3 } }),
     ],
   },
   bobbie: {

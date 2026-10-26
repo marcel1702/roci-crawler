@@ -22,7 +22,10 @@ export type AbilityId =
   | 'inspirieren';
 
 /** Grundangriff: Nahkampf oder Geschoss. */
-export type BasicAttack = { kind: 'melee' } | { kind: 'ranged'; projectileSpeed: number };
+export type BasicAttack =
+  | { kind: 'melee' }
+  /** `recoil`: Rückstoß in der Schwerelosigkeit (px/s), ohne Angabe der Standardwert. */
+  | { kind: 'ranged'; projectileSpeed: number; recoil?: number };
 
 export interface ClassDef {
   id: ClassId;

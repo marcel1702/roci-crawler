@@ -70,7 +70,7 @@ describe('rollItem', () => {
     expect(avg('mars')).toBeGreaterThan(avg('belt'));
     for (let seed = 0; seed < 100; seed++) {
       expect(['maxHp', 'armor']).toContain(roll(seed, { origin: 'earth', slot: 'weapon' }).originBonus.stat);
-      expect(['moveSpeedPct', 'cooldownReduction']).toContain(roll(seed, { origin: 'belt' }).originBonus.stat);
+      expect(['moveSpeedPct', 'cooldownReduction', 'zeroGControl']).toContain(roll(seed, { origin: 'belt' }).originBonus.stat);
     }
   });
 

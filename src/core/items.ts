@@ -29,6 +29,8 @@ export interface StatMods {
   potionHealPct: number;
   /** Zusätzlich tragbare Tränke. */
   extraPotions: number;
+  /** Kontrolle in der Schwerelosigkeit: mehr Schub, Dämpfung und Bremskraft (0.2 = +20 %). */
+  zeroGControl: number;
 }
 export type StatKey = keyof StatMods;
 export type Mods = Partial<StatMods>;
@@ -69,6 +71,7 @@ export const EMPTY_MODS: StatMods = {
   lifesteal: 0,
   potionHealPct: 0,
   extraPotions: 0,
+  zeroGControl: 0,
 };
 
 /** Wie stark Werte pro Gegenstandsstufe wachsen: feste Werte linear stark, Prozentwerte schwach. */
@@ -84,6 +87,7 @@ const SCALE_PER_LEVEL: Record<StatKey, number> = {
   lifesteal: 0,
   potionHealPct: 0.02,
   extraPotions: 0,
+  zeroGControl: 0.02,
 };
 
 /** Wertebereiche bei Gegenstandsstufe 1 (vor Seltenheits- und Herkunftsfaktoren). */
@@ -233,6 +237,7 @@ export interface DerivedStats {
   lifesteal: number;
   potionHealPct: number;
   extraPotions: number;
+  zeroGControl: number;
 }
 
 /** Werte der Figur aus Klassenwerten (inkl. Stufe) und Ausrüstung. */
@@ -251,5 +256,6 @@ export function deriveStats(base: ActorStats, mods: StatMods): DerivedStats {
     lifesteal: mods.lifesteal,
     potionHealPct: mods.potionHealPct,
     extraPotions: Math.round(mods.extraPotions),
+    zeroGControl: mods.zeroGControl,
   };
 }

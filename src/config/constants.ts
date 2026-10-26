@@ -62,6 +62,8 @@ export const GAME_EVENTS = {
   /** Payload: MissionStats. */
   missionCompleted: 'roci:mission-completed',
   restartRequested: 'roci:restart-requested',
+  /** Die Figur betritt erstmals in dieser Mission einen schwerelosen Raum. */
+  zeroGEntered: 'roci:zero-g-entered',
 } as const;
 
 /** Ereignisse innerhalb einer Szene (`scene.events`). Payload actorKilled: (Besiegter, Verursacher | null). */
@@ -124,3 +126,34 @@ export const CHEST = {
 } as const;
 
 export const EXIT_RADIUS = 30;
+
+/** Stöße in der Schwerelosigkeit (px/s Geschwindigkeitsänderung bei Masse 1; schwerere Gegner bewegen sich weniger). */
+export const KNOCKBACK = {
+  /** Nahkampftreffer. */
+  melee: 60,
+  /** Schlag eines Gegners mit Flächenwirkung. */
+  slam: 120,
+  /** Treffer durch ein Geschoss. */
+  projectile: 35,
+  /** Standard bei Flächenschaden. */
+  area: 70,
+  /** Rückstoß beim Schießen (Grundangriff ohne eigene Angabe). */
+  recoil: 28,
+  /** Rückstoß schießender Gegner. */
+  enemyRecoil: 24,
+} as const;
+
+export const ZEROG = {
+  /** Wahrscheinlichkeit, dass ein Kampf- oder Schatzraum im Dungeon schwerelos ist (Akt 1: einzelne kleine Bereiche). */
+  roomChance: 0.18,
+  /** Dauer der Bremswirkung von „Stabilisieren“ (ms). */
+  brakeMs: 900,
+  /** Abklingzeit von „Stabilisieren“ (ms). */
+  brakeCooldownMs: 2000,
+  /** Zusätzliche Dämpfung für Gegner und Verbündete ohne Schub (bewusst weniger als die Bremse der Spielerin). */
+  autoBrake: 2.5,
+  /** Anteil der Sprintgeschwindigkeit eines Sturmangriffs, die als Schwung bleibt. */
+  dashCarry: 0.35,
+  /** Sprünge der Geschwindigkeit unter diesem Wert (px/s) zählen nicht als Aufprall mit Rückmeldung. */
+  bumpFeedbackSpeed: 120,
+} as const;

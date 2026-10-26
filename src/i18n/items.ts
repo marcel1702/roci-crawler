@@ -15,6 +15,7 @@ const PERCENT_STATS = new Set<StatKey>([
   'cooldownReduction',
   'lifesteal',
   'potionHealPct',
+  'zeroGControl',
 ]);
 
 function formatNumber(value: number): string {

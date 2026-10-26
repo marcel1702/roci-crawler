@@ -3,6 +3,8 @@ export const COLORS = {
   background: 0x0b1020,
   floor: 0x1b2540,
   floorLine: 0x222e4f,
+  floorZeroG: 0x241d47,
+  floorZeroGLine: 0x4b3f8c,
   wall: 0x56637f,
   wallLight: 0x7a88a6,
   wallDark: 0x38425a,

@@ -115,18 +115,27 @@ Umgesetzt in Meilenstein 3 `[Umgesetzt]`, alle Zahlen sind Startwerte:
 - **Truhen:** öffnen sich beim Herangehen, geben 40–90 Credits und mit 30 % einen zusätzlichen Trank (höchstens 5). Items als Beute folgen mit Meilenstein 4.
 - **Credits** sind die Währung (Händler im Hub, Meilenstein 5).
 - Gegner bemerken den Spieler nur mit Sichtlinie (durch Wände erst aus ca. 70 px).
-- **Später:** vorgefertigte Module für Bossarenen, eigene Farbwelt pro Akt, Elite-Gegner mit Zusatzfähigkeit, Schwerelosigkeits-Räume (Meilenstein 7).
+- **Später:** vorgefertigte Module für Bossarenen, eigene Farbwelt pro Akt, Elite-Gegner mit Zusatzfähigkeit. Schwerelose Räume sind seit Meilenstein 7 dabei (Abschnitt 8).
 - **Zum Ausprobieren:** `?seed=123` lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen.
 
-## 8. Schwerelosigkeit `[Vorgabe]`, Regeln `[Vorschlag]`
+## 8. Schwerelosigkeit `[Vorgabe]`, Regeln `[Umgesetzt]`
 
-Bereiche (Räume oder Zonen) sind als schwerelos markiert. Dort bewegt sich die Figur **träge mit Schwung**:
+Umgesetzt in Meilenstein 7; alle Zahlen sind Startwerte für das Balancing (`core/zerog.ts`, `config/constants.ts`: `KNOCKBACK`, `ZEROG`).
 
-- Tippen setzt ein Ziel; die Figur beschleunigt dorthin und gleitet weiter, wenn man loslässt.
-- Wände prallen ab (gedämpft). Man kann sich von Wänden abstoßen.
-- Treffer und Rückstoß verschieben Figur und Gegner deutlich; Bobbies Schüsse stoßen sie zurück.
-- Fähigkeit/Taste „Stabilisieren“ bremst ab. Gürtler-Ausrüstung und Naomis Talente verbessern die Kontrolle.
-- Pfadfindung entfällt dort: Die Bewegung ist direkte Steuerung.
+Bereiche (im Dungeon: ganze Räume) sind als schwerelos markiert, erkennbar am **violetten Boden mit Diagonalraster** (auch auf der Minikarte). Dort bewegt sich die Figur **träge mit Schwung**:
+
+- **Schub:** Tippen setzt ein Ziel; die Figur beschleunigt dorthin (bis zum Lauftempo ihrer Klasse) und **gleitet weiter**, wenn der Schub endet (sanfte Dämpfung: Geschwindigkeit sinkt auf etwa die Hälfte pro 1,5 s). Pfadfindung bleibt als Wegweiser (Schub zeigt zum nächsten Wegpunkt), damit Türen und Ecken funktionieren.
+- **Wände prallen ab** (55 % der Geschwindigkeit bleiben), mit leichtem Wackeln der Kamera bei hartem Aufprall. Kein Schaden durch Aufprall.
+- **Rückstoß und Treffer:** Nahkampftreffer, Geschosse, Flächenschaden und Fähigkeiten stoßen Figur und Gegner weg (schwerere Gegner weniger); jeder Schuss schiebt die Schützin zurück: Bobbie stärker (55), Gauß-Strahl am stärksten (190), Naomi/Holden/Drohne mit Standardwert (28).
+- **„Stabilisieren“:** Taste unten links (nur in der Schwerelosigkeit sichtbar) oder Leertaste. Bremst ~0,9 s stark ab und bricht Lauf-/Angriffsbefehl ab; Abklingzeit 2 s. **Angriffshilfe:** Wer ein Ziel in Reichweite hat und angreift, bremst automatisch, damit Nahkämpfer nicht am Gegner vorbeitreiben.
+- **Sturmangriff** (Rammbock) behält danach 35 % des Schwungs.
+- **Gegner** steuern ihr Tempo nach (kein Rutschen ins Leere), bremsen im Stand von selbst leicht, treiben aber nach Stößen und Betäubung frei weiter. Schützen weichen per Schub zurück.
+- **Übergang:** Beim Betreten nimmt die Figur ihre Laufgeschwindigkeit mit, beim Verlassen ist der Schwung sofort weg (Laufbewegung greift wieder). Beim ersten Betreten einer schwerelosen Mission erscheint ein Hinweis.
+- **Kontrolle:** Gürtler-Ausrüstung (Gürtel mit Gürtler-Herkunft, Gürtel-Zusatzwert, Gürtler-Set) und Naomis Talente (Ingenieurin) verbessern Schub und Bremse (Wert „Kontrolle“, +Prozent auf beides).
+- **Im Dungeon:** Nur Kampf- und Schatzräume können schwerelos sein, nie Start- oder Ausgangsraum (Wahrscheinlichkeit 18 % in Akt 1, `ZEROG.roomChance`; Akt 2 erhöht sie). Die Karte selbst hängt nicht davon ab (gleiche Seeds, gleiche Räume).
+- Zum Ausprobieren: `?seed=7&zerog=1` macht jeden Kampf- und Schatzraum schwerelos, `&zerog=0` keinen.
+
+**Entscheidung (statt „Autopilot“):** direkte Steuerung mit Stabilisieren-Taste und kleiner Angriffshilfe; ein Autopilot nähme dem Modus die Eigenart. Bei Tests auf dem Tablet bitte darauf achten, ob das Gleiten zu rutschig oder zu zahm wirkt (Dämpfung, Höchsttempo, Rückstoßwerte sind Zahlen in `core/zerog.ts` bzw. `config/constants.ts`).
 
 ## 9. Beute `[Vorgabe]`
 
@@ -206,7 +215,7 @@ Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwisc
 
 1. **Eine Klasse pro Spielstand** (so umgesetzt) oder im Hub wechselbar? (Meilenstein 6)
 2. **Holdens Crew-Rufe** (so umgesetzt: Sperrfeuer, Amos greift ein, Inspirieren): einverstanden?
-3. **Schwerelosigkeit:** direkte Steuerung mit „Stabilisieren“-Taste (Vorschlag) oder Autopilot, der selbst abbremst? (Meilenstein 7)
+3. ~~Schwerelosigkeit: direkte Steuerung oder Autopilot~~ `[Entschieden, bitte bestätigen]` direkte Steuerung mit „Stabilisieren“ und Angriffshilfe (Abschnitt 8); nach dem Tablet-Test nachjustieren.
 4. **Gegner und Bosse:** eigene Figuren im Universum (Vorschlag) oder bekannte Figuren aus Büchern/Serie? (Meilenstein 8)
 5. ~~Hosting für den Tablet-Test~~ `[Entschieden]` GitHub Pages (siehe README).
 6. **Titel:** „Roci Crawler“ ist ein Arbeitstitel.

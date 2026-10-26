@@ -6,7 +6,7 @@ import type { AbilityDef } from './types';
 
 const DRONE = { damageBoostBase: 0 } as const;
 const HACK = { range: 280, stunMs: 2500, markMs: 5000, damageTaken: 1.35 } as const;
-const EMP = { radius: 110, damageMultiplier: 0.9, stunMs: 2000 } as const;
+const EMP = { radius: 110, damageMultiplier: 0.9, stunMs: 2000, knockback: 110 } as const;
 const CYAN = 0x5fd8ff;
 
 function nearest(player: Player, enemies: readonly Enemy[], range: number): Enemy | null {
@@ -66,7 +66,7 @@ const emp: AbilityDef = {
   cooldownMs: 12000,
   execute({ player, world, boost }) {
     const radius = EMP.radius * (1 + boost.area);
-    const hits = world.combat.areaDamage(player, player.x, player.y, radius, EMP.damageMultiplier * (1 + boost.damage), world.enemies, EMP.stunMs);
+    const hits = world.combat.areaDamage(player, player.x, player.y, radius, EMP.damageMultiplier * (1 + boost.damage), world.enemies, EMP.stunMs, EMP.knockback);
     if (hits === 0) return false;
     world.combat.ring(player.x, player.y, radius + player.radius, CYAN, 340);
     player.scene.cameras.main.shake(110, 0.005);

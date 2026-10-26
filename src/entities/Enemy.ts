@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TAP, TEXTURE_KEYS, TEXTURE_SCALE } from '../config/constants';
+import { KNOCKBACK, TAP, TEXTURE_KEYS, TEXTURE_SCALE } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { edgeDistance, isInSector } from '../core/combat';
 import { hasLineOfSight, rayDistance } from '../core/collision';
@@ -146,6 +146,13 @@ export class Enemy extends Actor {
     const sight = hasLineOfSight(this.world.grid, this.x, this.y, player.x, player.y);
 
     if (sight && dist < attack.minRange && dist > 0.001 && this.tauntMs <= 0) {
+      if (this.isFloating) {
+        // Schwerelos: nach hinten Schub geben statt zu laufen.
+        this.follower.clear();
+        this.floatToward(this.x - player.x, this.y - player.y);
+        this.faceToward(player.x, player.y);
+        return;
+      }
       const wanted = this.stats.moveSpeed * dt;
       const moved = this.moveBy(((this.x - player.x) / dist) * wanted, ((this.y - player.y) / dist) * wanted);
       if (moved > wanted * RETREAT_MIN_PROGRESS) {
@@ -211,7 +218,7 @@ export class Enemy extends Actor {
       case 'slam':
         combat.ring(this.x, this.y, attack.radius, COLORS.telegraph, 300);
         this.scene.cameras.main.shake(120, 0.006);
-        if (isInSector(this, 0, Math.PI, player, attack.radius)) combat.attack(this, player);
+        if (isInSector(this, 0, Math.PI, player, attack.radius)) combat.attack(this, player, 1, KNOCKBACK.slam);
         break;
       case 'ranged':
         projectiles.spawn({
@@ -221,7 +228,9 @@ export class Enemy extends Actor {
           angle: this.windupAim,
           speed: attack.projectileSpeed,
           damage: combat.rollDamage(this),
+          knockback: KNOCKBACK.projectile,
         });
+        this.pushAlong(-Math.cos(this.windupAim), -Math.sin(this.windupAim), KNOCKBACK.enemyRecoil);
         break;
     }
   }

@@ -30,7 +30,7 @@ export const CLASSES = {
     color: 0x9b6bd9,
     stats: { maxHp: 175, moveSpeed: 128, radius: 11, damageMin: 13, damageMax: 17, attackRange: 190, attackCooldownMs: 700 },
     growth: { hpPerLevel: 13, damagePerLevel: 0.06 },
-    basic: { kind: 'ranged', projectileSpeed: 440 },
+    basic: { kind: 'ranged', projectileSpeed: 440, recoil: 55 },
     abilities: ['raketensalve', 'ruestung', 'gauss'],
   },
   holden: {

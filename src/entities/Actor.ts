@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
-import { actorTextureKey, TEXTURE_KEYS, TEXTURE_SCALE } from '../config/constants';
+import { actorTextureKey, TEXTURE_KEYS, TEXTURE_SCALE, ZEROG } from '../config/constants';
 import { moveCircle } from '../core/collision';
 import { isInReach } from '../core/combat';
 import { armorReduction } from '../core/items';
 import { Cooldown } from '../core/cooldown';
 import { PathFollower } from '../core/follower';
+import type { Vec2 } from '../core/math';
 import type { ActorStats } from '../core/stats';
+import { DEFAULT_ZEROG, applyImpulse, matchedThrust, paramsFor, stepZeroG } from '../core/zerog';
 import type { BasicAttack } from '../data/types';
 import type { WorldContext } from './WorldContext';
 
@@ -13,6 +15,8 @@ import type { WorldContext } from './WorldContext';
 const STUCK_RATIO = 0.2;
 const STUCK_SECONDS = 0.35;
 const HIT_FLASH_MS = 70;
+/** In der Schwerelosigkeit gilt ein Wegpunkt in diesem Abstand (mindestens der Körperradius) als erreicht. */
+const FLOAT_REACH = 8;
 
 export type Team = 'player' | 'enemy';
 
@@ -36,7 +40,18 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   damageMultiplier = 1;
   /** Grundangriff: Nahkampf oder Geschoss. */
   basic: BasicAttack = { kind: 'melee' };
+  /** Geschwindigkeit (px/s); nur in der Schwerelosigkeit ungleich null, sonst bewegt sich der Akteur direkt. */
+  vx = 0;
+  vy = 0;
+  /** Faktor auf Schub und Bremse in der Schwerelosigkeit (Gürtler-Ausrüstung, Talente). */
+  zeroGControl = 1;
 
+  /** True: der Schub zeigt zum Wegpunkt und Schwung bleibt (Spielerin); false: die Geschwindigkeit wird angeglichen (Gegner). */
+  protected directThrust = false;
+  /** Zusätzliche Dämpfung beim Bremsen; Gegner bremsen ohne Schub von selbst ein wenig. */
+  protected brakeDamping: number = ZEROG.autoBrake;
+  /** Bremst in diesem Moment mit voller Kraft („Stabilisieren“). */
+  protected braking = false;
   protected readonly follower = new PathFollower();
   protected readonly attackCooldown = new Cooldown();
   protected readonly sprite: Phaser.GameObjects.Image;
@@ -44,6 +59,10 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   private dead = false;
   private stunMs = 0;
   private stuckSeconds = 0;
+  private floating = false;
+  private thrust: Vec2 | null = null;
+  private walkVx = 0;
+  private walkVy = 0;
 
   protected constructor(
     scene: Phaser.Scene,
@@ -77,6 +96,29 @@ export abstract class Actor extends Phaser.GameObjects.Container {
 
   get isStunned(): boolean {
     return this.stunMs > 0;
+  }
+
+  /** True, solange der Akteur auf einer schwerelosen Kachel ist. */
+  get isFloating(): boolean {
+    return this.floating;
+  }
+
+  /**
+   * Stößt den Akteur von `(fromX, fromY)` weg. Wirkt nur in der Schwerelosigkeit; große Gegner bewegen sich weniger.
+   */
+  knockFrom(fromX: number, fromY: number, strength: number): void {
+    this.pushAlong(this.x - fromX, this.y - fromY, strength);
+  }
+
+  /** Stößt in Richtung (dx, dy); die Länge von (dx, dy) ist ohne Bedeutung. */
+  pushAlong(dx: number, dy: number, strength: number): void {
+    const dist = Math.hypot(dx, dy);
+    if (!this.floating || dist < 0.001 || strength <= 0) return;
+    const mass = Math.max(0.6, (this.radius / 11) ** 2);
+    const body = { vx: this.vx, vy: this.vy };
+    applyImpulse(body, (dx / dist) * (strength / mass), (dy / dist) * (strength / mass));
+    this.vx = body.vx;
+    this.vy = body.vy;
   }
 
   /** Blickrichtung in Radiant. */
@@ -135,7 +177,57 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   protected tickTimers(dt: number): void {
     this.attackCooldown.update(dt * 1000);
     if (this.stunMs > 0) this.stunMs = Math.max(0, this.stunMs - dt * 1000);
+    this.tickFloat(dt);
   }
+
+  /**
+   * Schwerelosigkeit: Der Schub, den die Bewegungslogik im letzten Bild gesetzt hat, wird hier in Geschwindigkeit
+   * und Ortsänderung umgesetzt (ein Bild Verzögerung, unmerklich). Betäubte treiben ungebremst weiter.
+   */
+  private tickFloat(dt: number): void {
+    const { grid } = this.world;
+    const floating = grid.isZeroG(grid.toCol(this.x), grid.toRow(this.y));
+    if (floating !== this.floating) {
+      this.floating = floating;
+      this.vx = floating ? this.walkVx : 0;
+      this.vy = floating ? this.walkVy : 0;
+      this.thrust = null;
+      if (floating) this.onFloatStart();
+    }
+    this.walkVx = 0;
+    this.walkVy = 0;
+    if (!floating) return;
+
+    const thrust = this.thrust;
+    this.thrust = null;
+    const brake = this.braking || (this.brakeDamping > 0 && thrust === null && !this.isStunned);
+    const params = { ...paramsFor(this.stats.moveSpeed * this.speedMultiplier), brakeDamping: this.braking ? DEFAULT_ZEROG.brakeDamping : this.brakeDamping };
+    const body = { x: this.x, y: this.y, vx: this.vx, vy: this.vy, radius: this.radius };
+    const speedBefore = Math.hypot(body.vx, body.vy);
+    const { bumped } = stepZeroG(grid, body, dt, thrust, params, this.zeroGControl, brake);
+    this.setPosition(body.x, body.y);
+    this.vx = body.vx;
+    this.vy = body.vy;
+    if (bumped && speedBefore >= ZEROG.bumpFeedbackSpeed) this.onBump(speedBefore);
+  }
+
+  /** Wunschbewegung in der Schwerelosigkeit: Spielerin gibt Schub, Gegner gleichen ihre Geschwindigkeit an. */
+  protected floatToward(dx: number, dy: number): void {
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.001) return;
+    const dirX = dx / dist;
+    const dirY = dy / dist;
+    this.sprite.rotation = Math.atan2(dirY, dirX);
+    if (this.directThrust) {
+      this.thrust = { x: dirX, y: dirY };
+    } else {
+      this.thrust = matchedThrust(this, dirX, dirY, this.stats.moveSpeed * this.speedMultiplier);
+    }
+  }
+
+  protected onFloatStart(): void {}
+
+  protected onBump(_speed: number): void {}
 
   /** Greift an, wenn das Ziel in Reichweite und die Abklingzeit vorbei ist. */
   protected tryAttack(target: Actor): boolean {
@@ -151,6 +243,13 @@ export abstract class Actor extends Phaser.GameObjects.Container {
       this.stuckSeconds = 0;
       return;
     }
+    if (this.floating) {
+      // Kein Gehen entlang des Wegs: auf den nächsten Wegpunkt zusteuern, der Schwung bleibt.
+      const goal = this.follower.steer(this.x, this.y, Math.max(this.radius, FLOAT_REACH));
+      if (goal) this.floatToward(goal.x - this.x, goal.y - this.y);
+      this.stuckSeconds = 0;
+      return;
+    }
     const { dx, dy } = this.follower.step(this.x, this.y, this.stats.moveSpeed * this.speedMultiplier, dt);
     const wanted = Math.hypot(dx, dy);
     if (wanted === 0) {
@@ -160,6 +259,8 @@ export abstract class Actor extends Phaser.GameObjects.Container {
 
     this.sprite.rotation = Math.atan2(dy, dx);
     const moved = this.moveBy(dx, dy);
+    this.walkVx = (dx / dt) * (moved / wanted);
+    this.walkVy = (dy / dt) * (moved / wanted);
 
     if (moved >= wanted - 0.01) this.follower.commit();
     if (moved < wanted * STUCK_RATIO) {

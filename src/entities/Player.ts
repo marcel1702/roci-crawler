@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { ABILITIES } from '../abilities';
 import type { AbilityDef } from '../abilities';
-import { GAME_EVENTS, POTION, TAP, TEXTURE_SCALE, actorTextureKey } from '../config/constants';
+import { GAME_EVENTS, POTION, TAP, TEXTURE_SCALE, ZEROG, actorTextureKey } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { hasLineOfSight } from '../core/collision';
 import { edgeDistance, isInReach } from '../core/combat';
@@ -25,6 +25,7 @@ const CHASE_REPATH_SECONDS = 0.2;
 /** Berührungsabstand (Ränder), ab dem ein Sturmangriff einen Gegner rammt. */
 const RAM_CONTACT = 4;
 const GHOST_INTERVAL_S = 0.035;
+const STABILIZE_COLOR = 0x9fd8ff;
 
 export interface AbilitySlot {
   def: AbilityDef;
@@ -66,6 +67,8 @@ export class Player extends Actor {
   readonly profile: Profile;
   readonly abilities: AbilitySlot[];
   readonly potionCooldown = new Cooldown();
+  /** „Stabilisieren“: bremst in der Schwerelosigkeit stark ab. */
+  readonly brakeCooldown = new Cooldown();
   attackTarget: Enemy | null = null;
   maxPotions: number = POTION.charges;
   potions: number = POTION.charges;
@@ -78,6 +81,8 @@ export class Player extends Actor {
   boosts: AbilityBoost[] = [{ ...NO_BOOST }, { ...NO_BOOST }, { ...NO_BOOST }];
 
   private repathTimer = 0;
+  private brakeMs = 0;
+  private zeroGAnnounced = false;
   private dash: DashState | null = null;
   private ghostTimer = 0;
   private readonly buffs = new Map<string, { ms: number; effect: BuffEffect }>();
@@ -98,6 +103,8 @@ export class Player extends Actor {
     this.classDef = classDef;
     this.profile = profile;
     this.basic = classDef.basic;
+    this.directThrust = true;
+    this.brakeDamping = 0;
     this.applyDerived(derived);
     this.potions = this.maxPotions;
     this.abilities = classDef.abilities.map((id) => ({ def: ABILITIES[id], cooldown: new Cooldown() }));
@@ -134,6 +141,7 @@ export class Player extends Actor {
     this.critChance = derived.critChance;
     this.lifesteal = derived.lifesteal;
     this.cooldownReduction = derived.cooldownReduction;
+    this.zeroGControl = 1 + derived.zeroGControl;
     this.potionHealPct = derived.potionHealPct;
     this.maxPotions = POTION.charges + derived.extraPotions;
   }
@@ -186,9 +194,22 @@ export class Player extends Actor {
     return true;
   }
 
+  /** „Stabilisieren“: bremst kurz stark ab. Wirkt nur in der Schwerelosigkeit, sonst bleibt die Abklingzeit unberührt. */
+  stabilize(): boolean {
+    if (this.isDead || !this.isFloating || !this.brakeCooldown.ready) return false;
+    this.brakeMs = ZEROG.brakeMs;
+    this.braking = true;
+    this.brakeCooldown.trigger(ZEROG.brakeCooldownMs);
+    this.cancelCommands();
+    this.world.combat.ring(this.x, this.y, 30, STABILIZE_COLOR, 300);
+    return true;
+  }
+
   /** Stürmt `distance` Pixel in Richtung `angle`; stoppt am ersten gerammten Gegner und ruft dann `onHit`. */
   startDash(angle: number, distance: number, speed: number, onHit: (enemy: Enemy) => void): void {
     this.follower.clear();
+    this.vx = 0;
+    this.vy = 0;
     this.sprite.rotation = angle;
     this.ghostTimer = 0;
     this.dash = { dirX: Math.cos(angle), dirY: Math.sin(angle), remaining: distance, speed, onHit };
@@ -238,6 +259,9 @@ export class Player extends Actor {
     if (this.isDead) return;
     this.tickTimers(dt);
     this.potionCooldown.update(dt * 1000);
+    this.brakeCooldown.update(dt * 1000);
+    this.brakeMs = Math.max(0, this.brakeMs - dt * 1000);
+    this.braking = this.brakeMs > 0;
     for (const slot of this.abilities) slot.cooldown.update(dt * 1000);
     this.tickBuffs(dt);
 
@@ -255,6 +279,8 @@ export class Player extends Actor {
       if (sight && isInReach(this, target, this.stats.attackRange)) {
         this.follower.clear();
         this.faceToward(target.x, target.y);
+        // Angriffshilfe: Wer zielt, treibt in der Schwerelosigkeit nicht davon.
+        this.braking = true;
         this.tryAttack(target);
       } else {
         this.chase(target, dt);
@@ -288,11 +314,29 @@ export class Player extends Actor {
 
     const rammed = this.world.enemies.find((enemy) => !enemy.isDead && edgeDistance(this, enemy) <= RAM_CONTACT);
     if (rammed) {
-      this.dash = null;
+      this.endDash(dash);
       dash.onHit(rammed);
     } else if (dash.remaining <= 0.01 || moved < step * 0.5) {
-      this.dash = null;
+      this.endDash(dash);
     }
+  }
+
+  /** Nach dem Sturmangriff bleibt in der Schwerelosigkeit ein Teil des Schwungs. */
+  private endDash(dash: DashState): void {
+    this.dash = null;
+    if (!this.isFloating) return;
+    this.vx = dash.dirX * dash.speed * ZEROG.dashCarry;
+    this.vy = dash.dirY * dash.speed * ZEROG.dashCarry;
+  }
+
+  protected override onFloatStart(): void {
+    if (this.zeroGAnnounced) return;
+    this.zeroGAnnounced = true;
+    this.scene.game.events.emit(GAME_EVENTS.zeroGEntered);
+  }
+
+  protected override onBump(speed: number): void {
+    this.scene.cameras.main.shake(70, Math.min(0.006, 0.0015 + speed / 90000));
   }
 
   private tickBuffs(dt: number): void {

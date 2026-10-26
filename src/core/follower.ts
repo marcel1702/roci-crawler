@@ -57,6 +57,20 @@ export class PathFollower {
     return { dx: cx - x, dy: cy - y };
   }
 
+  /**
+   * Wegpunkt, auf den man zusteuert (Schwerelosigkeit: kein Schritt entlang des Wegs, sondern Schub).
+   * Wegpunkte, die näher als `reach` liegen, gelten als erreicht; am Ende liefert die Methode null.
+   */
+  steer(x: number, y: number, reach: number): Vec2 | null {
+    while (this.index < this.path.length) {
+      const waypoint = this.path[this.index] as Vec2;
+      if (Math.hypot(waypoint.x - x, waypoint.y - y) > reach) return waypoint;
+      this.index++;
+    }
+    this.pendingIndex = this.index;
+    return null;
+  }
+
   /** Übernimmt die Wegpunkte des letzten `step()`, wenn die Bewegung vollständig gelungen ist. */
   commit(): void {
     this.index = this.pendingIndex;

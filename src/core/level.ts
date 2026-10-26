@@ -2,7 +2,7 @@ import { TILE, TileGrid } from './grid';
 import type { Vec2 } from './math';
 
 export interface LevelLayout {
-  /** ASCII-Zeilen: `#` Wand, `.` Boden, `@` Spielerstart, `e` Gegner-Spawn. */
+  /** ASCII-Zeilen: `#` Wand, `.` Boden, `z` Boden ohne Schwerkraft, `@` Spielerstart, `e` Gegner-Spawn. */
   rows: readonly string[];
 }
 
@@ -39,6 +39,9 @@ export function parseLevel(layout: LevelLayout, tileSize: number, markerChars = 
           cells[row * cols + col] = TILE.wall;
           break;
         case '.':
+          break;
+        case 'z':
+          cells[row * cols + col] = TILE.zeroG;
           break;
         case '@':
           playerStart = center;

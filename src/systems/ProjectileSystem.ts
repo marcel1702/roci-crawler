@@ -18,6 +18,8 @@ export interface ProjectileSpawn {
   tint?: number;
   /** Flugzeit in Sekunden, danach verschwindet das Geschoss. */
   lifetime?: number;
+  /** Stoß auf das Ziel in Flugrichtung (wirkt nur in der Schwerelosigkeit). */
+  knockback?: number;
 }
 
 interface LiveProjectile {
@@ -25,6 +27,7 @@ interface LiveProjectile {
   team: Team;
   damage: number;
   crit: boolean;
+  knockback: number;
   source: Actor;
   sprite: Phaser.GameObjects.Image;
 }
@@ -58,6 +61,7 @@ export class ProjectileSystem {
       team: spec.source.team,
       damage: spec.damage,
       crit: spec.crit ?? false,
+      knockback: spec.knockback ?? 0,
       source: spec.source,
       sprite,
     });
@@ -85,6 +89,7 @@ export class ProjectileSystem {
       );
       if (victim) {
         this.world.combat.dealDamage(projectile.source, victim, projectile.damage, projectile.crit);
+        victim.pushAlong(projectile.state.vx, projectile.state.vy, projectile.knockback);
         this.spark(x, y);
         projectile.sprite.destroy();
         continue;
