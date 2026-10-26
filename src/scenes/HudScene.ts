@@ -41,6 +41,7 @@ export class HudScene extends Phaser.Scene {
   private minimapRect = { x: 0, y: 0, w: 0, h: 0, scale: 1 };
   private abilityButtons: AbilityButton[] = [];
   private potionButton!: AbilityButton;
+  private bagButton!: AbilityButton;
   private hint!: Phaser.GameObjects.Text;
   private banner!: Phaser.GameObjects.Text;
   private overlayShade!: Phaser.GameObjects.Rectangle;
@@ -88,6 +89,8 @@ export class HudScene extends Phaser.Scene {
     for (let i = 0; i < 3; i++) this.abilityButtons.push(new AbilityButton(this, COLORS.accent));
     this.potionButton = new AbilityButton(this, 0x6dff9a);
     this.potionButton.setIcon('potion');
+    this.bagButton = new AbilityButton(this, COLORS.uiDim);
+    this.bagButton.setIcon('bag');
 
     this.hint = this.makeText({ color: '#dbe4f5', align: 'center' }).setOrigin(0.5, 1).setText(t('hud.hint.controls'));
     this.banner = this.makeText({ fontStyle: 'bold', color: '#ffe08a', align: 'center' }).setOrigin(0.5).setVisible(false);
@@ -106,6 +109,7 @@ export class HudScene extends Phaser.Scene {
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
     this.input.on(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
+    this.input.keyboard?.on('keydown-I', this.openInventory, this);
     const on = this.game.events;
     on.on(GAME_EVENTS.missionReady, this.onMissionReady, this);
     on.on(GAME_EVENTS.waveStarted, this.onWaveStarted, this);
@@ -117,6 +121,7 @@ export class HudScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
+      this.input.keyboard?.off('keydown-I', this.openInventory, this);
       on.off(GAME_EVENTS.missionReady, this.onMissionReady, this);
       on.off(GAME_EVENTS.waveStarted, this.onWaveStarted, this);
       on.off(GAME_EVENTS.waveCleared, this.onWaveCleared, this);
@@ -178,14 +183,19 @@ export class HudScene extends Phaser.Scene {
   /** True, wenn ein Bildschirmpunkt auf einem Bedienelement liegt (Tipp darf dann nicht laufen lassen). */
   isOverUi(screenX: number, screenY: number): boolean {
     const pad = 10 * this.u;
-    return [...this.abilityButtons, this.potionButton].some((button) => button.contains(screenX, screenY, pad));
+    return [...this.abilityButtons, this.potionButton, this.bagButton].some((button) => button.contains(screenX, screenY, pad));
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     const player = this.player;
-    if (!player || this.locked) return;
+    if (!player || this.locked || this.inventoryOpen()) return;
     const pad = 6 * this.u;
 
+    if (this.bagButton.contains(pointer.x, pointer.y, pad)) {
+      this.bagButton.press();
+      this.openInventory();
+      return;
+    }
     const index = this.abilityButtons.findIndex((button) => button.contains(pointer.x, pointer.y, pad));
     if (index >= 0) {
       this.abilityButtons[index]?.press();
@@ -194,6 +204,17 @@ export class HudScene extends Phaser.Scene {
       this.potionButton.press();
       player.usePotion();
     }
+  }
+
+  private inventoryOpen(): boolean {
+    return this.scene.isActive(SCENE_KEYS.inventory);
+  }
+
+  /** Öffnet Rucksack und Ausrüstung; die Mission pausiert, solange er offen ist. */
+  private openInventory(): void {
+    if (!this.player || this.locked || this.inventoryOpen()) return;
+    this.scene.pause(SCENE_KEYS.mission);
+    this.scene.launch(SCENE_KEYS.inventory);
   }
 
   private onMissionReady(player: Player): void {
@@ -244,13 +265,21 @@ export class HudScene extends Phaser.Scene {
     this.locked = true;
     this.overlayTitle.setText(t('hud.result.title')).setColor('#8dffb0');
     this.overlayLabels.setText(
-      [t('hud.result.time'), t('hud.result.kills'), t('hud.result.chests'), t('hud.result.credits'), t('hud.result.xp')].join('\n'),
+      [
+        t('hud.result.time'),
+        t('hud.result.kills'),
+        t('hud.result.chests'),
+        t('hud.result.items'),
+        t('hud.result.credits'),
+        t('hud.result.xp'),
+      ].join('\n'),
     );
     this.overlayValues.setText(
       [
         formatTime(stats.timeMs),
         String(stats.kills),
         `${stats.chestsOpened} / ${stats.chestsTotal}`,
+        String(stats.items),
         String(stats.credits),
         t('hud.result.xpValue', { amount: stats.xp }),
       ].join('\n'),
@@ -349,6 +378,10 @@ export class HudScene extends Phaser.Scene {
     this.playerHp.setFontSize(Math.round(12 * u)).setPosition(left + barW / 2, top + 19 * u + barH / 2);
     this.xpBar.setLayout(left, top + 19 * u + barH + 3 * u, barW, 5 * u);
 
+    // Rucksack-Taste: links unter den Leisten
+    const bagR = 24 * u;
+    this.bagButton.layout(left + bagR, top + 19 * u + barH + 3 * u + 5 * u + 10 * u + bagR, bagR);
+
     // Ziel: oben Mitte
     const targetW = clamp(shortCss * 0.5, 160, 260) * u;
     this.targetName.setFontSize(Math.round(13 * u)).setPosition(width / 2, top + 14 * u);
@@ -412,7 +445,7 @@ export class HudScene extends Phaser.Scene {
     const rowsTop = height * 0.34;
     this.overlayLabels.setPosition(width / 2 - 10 * u, rowsTop);
     this.overlayValues.setPosition(width / 2 + 10 * u, rowsTop);
-    const hintY = resultMode ? rowsTop + lineH * 5 + 32 * u : height * 0.42 + 56 * u;
+    const hintY = resultMode ? rowsTop + lineH * 6 + 32 * u : height * 0.42 + 56 * u;
     this.overlayHint.setFontSize(Math.round(18 * u)).setPosition(width / 2, hintY);
   }
 

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { AbilityIcon } from '../abilities';
 import { COLORS } from '../config/palette';
 
-export type ButtonIcon = AbilityIcon | 'potion';
+export type ButtonIcon = AbilityIcon | 'potion' | 'bag';
 
 export interface ButtonState {
   /** Verbleibender Anteil der Abklingzeit, 1 = gerade ausgelöst, 0 = bereit. */
@@ -142,6 +142,12 @@ export class AbilityButton {
           g.lineBetween(x + Math.cos(a) * r * 0.2, y + Math.sin(a) * r * 0.2, x + Math.cos(a) * r * 0.55, y + Math.sin(a) * r * 0.55);
         }
         g.fillCircle(x, y, r * 0.12);
+        break;
+      }
+      case 'bag': {
+        g.strokeRoundedRect(x - r * 0.42, y - r * 0.2, r * 0.84, r * 0.72, r * 0.14);
+        g.beginPath().arc(x, y - r * 0.2, r * 0.22, Math.PI, 0).strokePath();
+        g.lineBetween(x - r * 0.42, y + r * 0.08, x + r * 0.42, y + r * 0.08);
         break;
       }
       case 'potion': {

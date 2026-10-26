@@ -6,6 +6,9 @@ import { COLORS } from '../config/palette';
 import { edgeDistance, isInReach } from '../core/combat';
 import { Cooldown } from '../core/cooldown';
 import { findPath } from '../core/pathfinding';
+import { deriveStats } from '../core/items';
+import type { DerivedStats } from '../core/items';
+import type { Profile } from '../core/profile';
 import type { Progression } from '../core/progression';
 import { statsAtLevel } from '../core/stats';
 import type { ClassDef } from '../data/types';
@@ -32,15 +35,26 @@ interface DashState {
   onHit: (enemy: Enemy) => void;
 }
 
+/** Werte der Figur aus Klasse, Stufe und Ausrüstung. */
+function derive(classDef: ClassDef, profile: Profile): DerivedStats {
+  const base = statsAtLevel(classDef.stats, classDef.growth, profile.progression.level);
+  return deriveStats(base, profile.inventory.mods());
+}
+
 /** Die Spielfigur. Bekommt Befehle (laufen / Gegner angreifen / Fähigkeit) von Eingabe und HUD. */
 export class Player extends Actor {
   readonly team = 'player';
   readonly classDef: ClassDef;
-  readonly progression: Progression;
+  readonly profile: Profile;
   readonly abilities: AbilitySlot[];
   readonly potionCooldown = new Cooldown();
   attackTarget: Enemy | null = null;
+  maxPotions: number = POTION.charges;
   potions: number = POTION.charges;
+  /** Anteil, um den Abklingzeiten der Fähigkeiten kürzer sind (aus Ausrüstung). */
+  cooldownReduction = 0;
+  /** Zusätzlicher Anteil, den Tränke heilen (aus Ausrüstung). */
+  potionHealPct = 0;
 
   private repathTimer = 0;
   private dash: DashState | null = null;
@@ -54,15 +68,40 @@ export class Player extends Actor {
     x: number,
     y: number,
     classDef: ClassDef,
-    progression: Progression,
+    profile: Profile,
   ) {
-    super(scene, world, x, y, statsAtLevel(classDef.stats, classDef.growth, progression.level), classDef.id);
+    const derived = derive(classDef, profile);
+    super(scene, world, x, y, derived.stats, classDef.id);
     this.classDef = classDef;
-    this.progression = progression;
+    this.profile = profile;
+    this.applyDerived(derived);
+    this.potions = this.maxPotions;
     this.abilities = classDef.abilities.map((id) => ({ def: ABILITIES[id], cooldown: new Cooldown() }));
 
     this.aura = new Phaser.GameObjects.Graphics(scene).setVisible(false);
     this.addAt(this.aura, 1);
+  }
+
+  get progression(): Progression {
+    return this.profile.progression;
+  }
+
+  /** Berechnet die Werte neu (nach Stufenaufstieg oder Wechsel der Ausrüstung); das Verhältnis der Lebenspunkte bleibt. */
+  refreshStats(): void {
+    const ratio = this.hp / this.stats.maxHp;
+    this.applyDerived(derive(this.classDef, this.profile));
+    this.hp = Math.min(this.stats.maxHp, Math.max(1, Math.round(this.stats.maxHp * ratio)));
+    this.potions = Math.min(this.potions, this.maxPotions);
+  }
+
+  private applyDerived(derived: DerivedStats): void {
+    this.stats = derived.stats;
+    this.armor = derived.armor;
+    this.critChance = derived.critChance;
+    this.lifesteal = derived.lifesteal;
+    this.cooldownReduction = derived.cooldownReduction;
+    this.potionHealPct = derived.potionHealPct;
+    this.maxPotions = POTION.charges + derived.extraPotions;
   }
 
   get isDashing(): boolean {
@@ -98,13 +137,13 @@ export class Player extends Actor {
     const slot = this.abilities[index];
     if (!slot || this.isDead || this.isStunned || this.dash || !slot.cooldown.ready) return false;
     const done = slot.def.execute({ player: this, world: this.world, scene: this.scene });
-    if (done) slot.cooldown.trigger(slot.def.cooldownMs);
+    if (done) slot.cooldown.trigger(slot.def.cooldownMs * (1 - this.cooldownReduction));
     return done;
   }
 
   usePotion(): boolean {
     if (this.isDead || this.potions <= 0 || !this.potionCooldown.ready || this.hp >= this.stats.maxHp) return false;
-    const healed = this.heal(Math.round(this.stats.maxHp * POTION.healFraction));
+    const healed = this.heal(Math.round(this.stats.maxHp * (POTION.healFraction + this.potionHealPct)));
     this.potions--;
     this.potionCooldown.trigger(POTION.cooldownMs);
     this.world.combat.floatText(this.x, this.y - this.radius - 6, `+${healed}`, COLORS.heal);
@@ -132,8 +171,9 @@ export class Player extends Actor {
     const level = reached.at(-1);
     if (level === undefined) return;
 
-    this.stats = statsAtLevel(this.classDef.stats, this.classDef.growth, level);
+    this.refreshStats();
     this.hp = this.stats.maxHp;
+    this.profile.touch();
     this.world.combat.ring(this.x, this.y, 50, 0xffd34d, 450);
     this.world.combat.floatText(this.x, this.y - this.radius - 20, t('hud.levelUp', { level }), COLORS.elite, 15);
     this.scene.game.events.emit(GAME_EVENTS.playerLevelUp, level);

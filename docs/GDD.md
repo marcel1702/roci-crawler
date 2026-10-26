@@ -119,19 +119,36 @@ Bereiche (Räume oder Zonen) sind als schwerelos markiert. Dort bewegt sich die 
 
 ## 9. Beute `[Vorgabe]`
 
-**Seltenheit** `[Vorschlag: 5 Stufen]`: Gewöhnlich · Ungewöhnlich · Selten · Episch · Legendär.
-Mehr Seltenheit = mehr Eigenschaften (0 bis 4); Legendäre haben zusätzlich einen festen Spezialeffekt.
+Umgesetzt in Meilenstein 4 `[Umgesetzt]`, alle Zahlen sind Startwerte für das Balancing (`src/data/items.ts`, `src/data/loot.ts`):
 
-**Herkunft** `[Vorgabe]` mit eigenen Boni `[Vorschlag]`:
+**Aufbau eines Gegenstands:** Platz, Grundtyp, **Seltenheit**, **Herkunft**, Gegenstandsstufe, ein **Hauptwert** (je Platz), ein **Herkunftsbonus** und 0–4 **Zusatzwerte**. Gegenstände haben keine Klassenbeschränkung (kann mit den Klassen in Meilenstein 6 überdacht werden).
 
-| Herkunft | Charakter | Typische Boni |
-|---|---|---|
-| **Erde** | Solide, teuer, sicher | Mehr Lebenspunkte und Panzerung |
-| **Mars** | Militärische Präzision | Mehr Schaden, Krit, Reichweite; weniger Rückstoß |
-| **Gürtel** | Improvisiert, effizient | Bewegungstempo, kürzere Abklingzeiten, Schwerelosigkeits-Kontrolle |
+| Platz | Hauptwert | | Seltenheit | Zusatzwerte | Hauptwert × |
+|---|---|---|---|---|---|
+| Waffe | Waffenschaden | | Gewöhnlich (grau) | 0 | 1,0 |
+| Rüstung | Panzerung | | Ungewöhnlich (grün) | 1 | 1,1 |
+| Helm | Leben | | Selten (blau) | 2 | 1,25 |
+| Gadget | Lauftempo | | Episch (lila) | 3 | 1,45 |
+| Modul | Krit.-Chance | | Legendär (orange) | 4 + Spezialeffekt | 1,7 |
 
-Drei Teile gleicher Herkunft geben einen Set-Bonus. Slots: Waffe, Rüstung, Helm, Gadget, Modul.
-Quellen: Gegner-Drops, Truhen, Bosse (garantiert Selten+), Händler.
+Spezialeffekte (Legendär): **Vampirisch** (+6 % Lebensraub), **Sanitäter** (+35 % Trankheilung, +1 Trank).
+Weitere Werte: Schaden %, Leben %, Panzerung, Abklingzeit, Lebensraub, Trankheilung. Werte wachsen mit der **Gegenstandsstufe** (= Spielerstufe beim Fund).
+
+**Herkunft** `[Vorgabe]` mit Boni:
+
+| Herkunft | Charakter | Hauptwert × | Herkunftsbonus (fest) | bevorzugte Zusatzwerte | Set-Bonus ab 3 Teilen |
+|---|---|---|---|---|---|
+| **Erde** | Solide, sicher | 1,2 | Leben oder Panzerung | Leben, Panzerung, Trankheilung | +10 % Leben |
+| **Mars** | Militärische Präzision | 1,0 | Schaden % oder Krit. | Schaden, Krit. | +10 % Schaden |
+| **Gürtel** | Improvisiert, effizient | 0,9 | Tempo oder Abklingzeit | Tempo, Abklingzeit | +8 % Tempo, +8 % kürzere Abklingzeit |
+
+Panzerung hält `Panzerung / (Panzerung + 120)` des Schadens ab; Krit. verursacht 150 % Schaden (Deckel 50 % Chance); Abklingzeit-Reduktion höchstens 40 %.
+
+**Quellen:** normale Gegner 12 % (meist gewöhnlich), **Elite** immer (viel besser), **Wächter der Luftschleuse** immer (mindestens ungewöhnlich, meist selten/episch), **Truhen** immer einen Gegenstand. Beute liegt als farbiger Kristall am Boden (ab selten mit Namen, ab episch mit Lichtsäule) und wird beim Darüberlaufen aufgehoben.
+
+**Rucksack:** 20 Plätze. Gegenstände lassen sich **ausrüsten**, **ablegen** und **verwerten** (halber Wert in Credits; Episch/Legendär verlangen eine zweite Bestätigung). „Gewöhnliche verwerten“ räumt mit einem Tipp auf. Vor dem Ausrüsten zeigt ein **Vergleich** (▲/▼), wie sich die Werte ändern.
+
+Gegner werden mit der Spielerstufe etwas stärker (+6 % Leben, +4 % Schaden je Stufe), die Figur wächst schneller, Ausrüstung bringt zusätzlichen Vorsprung. Händler, die Credits für Gegenstände anbieten, kommen im Hub (Meilenstein 5).
 
 ## 10. Fortschritt `[Vorgabe]`, Zahlen `[Vorschlag]`
 
@@ -148,9 +165,15 @@ Die nicht gewählten Hauptfiguren besetzen Stationen der Crew.
 
 ## 12. Speichern `[Vorgabe: localStorage/IndexedDB]`
 
-- localStorage mit versioniertem Format und Migrationen; IndexedDB erst, wenn der Platz nicht reicht.
-- Autosave beim Betreten des Hubs und nach jeder Mission; mehrere Spielstände `[Vorschlag: 3]`.
-- `navigator.storage.persist()` anfragen, damit Safari den Spielstand nicht räumt.
+Umgesetzt `[Umgesetzt, Meilenstein 4]`:
+
+- **localStorage** (ein Eintrag, JSON) mit **Versionsnummer** und vorbereiteten Migrationen; IndexedDB erst, wenn der Platz nicht reicht.
+- Gespeichert werden Stufe, Erfahrung, Credits, Rucksack, Ausrüstung, abgeschlossene Missionen.
+- **Autospeichern** kurz nach jeder Änderung (gebündelt) und sofort, wenn die App in den Hintergrund wechselt oder schließt.
+- **Robust:** Unbrauchbare Gegenstände werden verworfen statt den ganzen Spielstand; beschädigte Daten werden vor dem Überschreiben als Sicherung abgelegt; ein Spielstand einer neueren Version wird nie überschrieben; fehlender oder voller Speicher bricht das Spiel nicht ab.
+- `navigator.storage.persist()` wird angefragt, damit Safari den Spielstand nicht räumt.
+- `?reset` an der URL beginnt mit einem frischen Spielstand (zum Testen).
+- Noch offen `[Vorschlag: 3 Spielstände]`: mehrere Spielstände und Klassenwahl kommen mit dem Hub (Meilenstein 5).
 
 ## 13. Nicht-Ziele
 

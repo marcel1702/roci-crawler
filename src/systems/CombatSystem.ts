@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { MISSION_EVENTS } from '../config/constants';
+import { CRIT_MULTIPLIER, MISSION_EVENTS } from '../config/constants';
 import { COLORS } from '../config/palette';
 import { rollDamage } from '../core/combat';
 import type { Rng } from '../core/rng';
@@ -17,23 +17,35 @@ export class CombatSystem {
 
   /** Grundangriff im Nahkampf, optional mit Schadensfaktor (z. B. für Fähigkeiten). */
   meleeAttack(attacker: Actor, target: Actor, multiplier = 1): number {
-    const damage = Math.round(rollDamage(attacker.stats, this.rng) * multiplier);
     attacker.faceToward(target.x, target.y);
     this.swingFx(attacker, Math.atan2(target.y - attacker.y, target.x - attacker.x));
-    return this.dealDamage(attacker, target, damage);
+    return this.attack(attacker, target, multiplier);
   }
 
-  /** Würfelt Schaden aus den Werten des Angreifers, ohne ihn anzuwenden (für Geschosse und Flächenangriffe). */
+  /** Würfelt einen Treffer (mit Chance auf Kritisch) und wendet ihn an. Liefert den tatsächlichen Schaden. */
+  attack(attacker: Actor, target: Actor, multiplier = 1): number {
+    const crit = attacker.critChance > 0 && this.rng.chance(attacker.critChance);
+    const amount = Math.round(rollDamage(attacker.stats, this.rng) * multiplier * (crit ? CRIT_MULTIPLIER : 1));
+    return this.dealDamage(attacker, target, amount, crit);
+  }
+
+  /** Würfelt Schaden aus den Werten des Angreifers, ohne ihn anzuwenden (für Geschosse). */
   rollDamage(attacker: Actor, multiplier = 1): number {
     return Math.round(rollDamage(attacker.stats, this.rng) * multiplier);
   }
 
   /** Wendet Schaden an, zeigt die Zahl und meldet einen Todesfall. Liefert den tatsächlichen Schaden. */
-  dealDamage(source: Actor | null, target: Actor, amount: number): number {
+  dealDamage(source: Actor | null, target: Actor, amount: number, crit = false): number {
     if (target.isDead) return 0;
     const dealt = target.takeDamage(amount);
-    this.floatText(target.x, target.y - target.radius - 6, String(dealt), target.team === 'player' ? COLORS.damageTaken : COLORS.damage);
+    const color = target.team === 'player' ? COLORS.damageTaken : crit ? COLORS.crit : COLORS.damage;
+    this.floatText(target.x, target.y - target.radius - 6, crit ? `${dealt}!` : String(dealt), color, crit ? 17 : 13);
     if (target.team === 'player') this.scene.cameras.main.shake(90, 0.004);
+
+    if (source && !source.isDead && source.lifesteal > 0 && target.team !== source.team) {
+      const healed = source.heal(dealt * source.lifesteal);
+      if (healed >= 1) this.floatText(source.x, source.y - source.radius - 18, `+${Math.round(healed)}`, COLORS.heal, 11);
+    }
     if (target.isDead) this.scene.events.emit(MISSION_EVENTS.actorKilled, target, source);
     return dealt;
   }

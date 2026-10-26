@@ -194,13 +194,13 @@ export class Enemy extends Actor {
       case 'melee':
         combat.swingFx(this, this.windupAim);
         if (isInSector(this, this.windupAim, MELEE_HALF_ANGLE, player, this.radius + this.stats.attackRange + MELEE_SLACK)) {
-          combat.dealDamage(this, player, combat.rollDamage(this));
+          combat.attack(this, player);
         }
         break;
       case 'slam':
         combat.ring(this.x, this.y, attack.radius, COLORS.telegraph, 300);
         this.scene.cameras.main.shake(120, 0.006);
-        if (isInSector(this, 0, Math.PI, player, attack.radius)) combat.dealDamage(this, player, combat.rollDamage(this));
+        if (isInSector(this, 0, Math.PI, player, attack.radius)) combat.attack(this, player);
         break;
       case 'ranged':
         projectiles.spawn({

@@ -1,6 +1,9 @@
 import type { ActorStats, LevelGrowth } from '../core/stats';
 import type { TextKey } from '../i18n';
 
+/** Woher Beute stammt; bestimmt Dropchance und Seltenheit (siehe data/loot.ts). */
+export type LootSource = 'enemy' | 'elite' | 'guardian' | 'chest';
+
 export type ClassId = 'amos' | 'naomi' | 'bobbie' | 'holden';
 
 /** Fähigkeiten aller Klassen; die Wirkung steht in `src/abilities`, hier nur die Kennung. */
@@ -39,6 +42,8 @@ export interface EnemyDef {
   elite?: boolean;
   /** Erfahrung für den Spieler beim Besiegen. */
   xp: number;
+  /** Beutetabelle; ohne Angabe `enemy`. */
+  loot?: LootSource;
   stats: ActorStats;
   attack: EnemyAttack;
   /** Ab diesem Abstand (Mittelpunkte) bemerkt der Gegner den Spieler. */

@@ -8,7 +8,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **1** | **Fundament** ✅ | Vite + TypeScript + Phaser 3, PWA (offline, installierbar), Dev-Server im WLAN, Testarena, Spielfigur (Amos) mit Tippen-zum-Laufen, Pfadfindung, Gegner mit einfacher KI, Nahkampf, HUD-Grundlayout, Hoch- und Querformat | Auf dem Tablet läuft die Figur per Tippen, greift Gegner an, stirbt und startet neu; die gebaute App startet offline | M |
 | **2** | Kampfkern ✅ | 3 Fähigkeiten-Tasten (Amos) mit Abklingzeit, Fernkampf-Gegner mit Projektilen und Sichtlinie, Elite-Gegner, Angriffs-Ankündigung, Erfahrung und Stufenaufstieg, Trank-Taste | Ein Kampf mit 3 Gegnertypen macht Spaß und ist fair lesbar | M |
 | **3** | Dungeon-Generator ✅ | Seeded Räume-und-Gänge-Generator, Spawn-Tabellen, Truhen, Missionsziel (Ausgang/Boss), Kamera/Nebel, Ergebnisbildschirm | Jeder Seed erzeugt einen lösbaren Dungeon (automatisch geprüft); eine Mission lässt sich von Start bis Ziel spielen | M |
-| **4** | Beute, Inventar, Speichern | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
+| **4** | Beute, Inventar, Speichern ✅ | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
 | **5** | Rocinante-Hub | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
 | **6** | Klassen & Talente | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
 | **7** | Schwerelosigkeit | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
@@ -52,4 +52,16 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitt 7):
 - Testarena bleibt als Übungsmodus erhalten: `?mode=arena`. Feste Karte zum Nachstellen: `?seed=123`.
 
 Bewusst **nicht** enthalten: Items als Beute (Meilenstein 4), Hub und Händler für die Credits (5), Bossräume und Raum-Module (8), Schwerelosigkeits-Zonen (7).
+
+## Meilenstein 4: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitte 9 und 12):
+- **Item-Modell** (`core/items.ts`): 5 Seltenheiten, 5 Plätze, Herkunft Erde/Mars/Gürtel mit Bonus und Set-Bonus ab 3 Teilen, 2 legendäre Spezialeffekte; deterministisch würfelbar. Regeln und Zahlen in `data/items.ts`, `data/loot.ts`.
+- **Wirkung im Spiel:** Panzerung, Krit., Lebensraub, Abklingzeit, Tempo, Leben, Schaden, Trankheilung und -anzahl.
+- **Beute:** Drops von Gegnern (Elite/Wächter sicher), Truhen; Aufheben beim Darüberlaufen.
+- **Inventar-Oberfläche** (`scenes/InventoryScene.ts`): Rucksack (20), Ausrüstung, Detailkarte mit Vergleich, Ablegen, Verwerten, „Gewöhnliche verwerten“; Quer- und Hochformat; öffnet per HUD-Taste oder `I`, pausiert die Mission.
+- **Spielstand** (`core/profile.ts`, `persistence/`): versioniert, robust gegen kaputte Daten, Autospeichern; `?reset` zum Zurücksetzen.
+- Tests: Item-Würfeln (Verteilungen, Herkunft, Skalierung), Inventar, Spielstand-Rundreise, Beschädigung, neuere Version.
+
+Bewusst **nicht** enthalten: Händler (Meilenstein 5), Klassen-spezifische Waffen, Verbessern/Zerlegen von Gegenständen, weitere legendäre Effekte, mehrere Spielstände.
 

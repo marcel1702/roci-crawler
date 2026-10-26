@@ -30,6 +30,7 @@ export const SCENE_KEYS = {
   boot: 'BootScene',
   mission: 'MissionScene',
   hud: 'HudScene',
+  inventory: 'InventoryScene',
 } as const;
 
 export const REGISTRY_KEYS = {
@@ -61,11 +62,20 @@ export const MISSION_EVENTS = {
   actorKilled: 'mission:actor-killed',
 } as const;
 
-/** Schlüssel der Werte, die über Szenenneustarts hinweg leben (später: Spielstand). */
-export const REGISTRY_PROGRESSION = 'progression';
+/** Schlüssel des Spielstands (`Profile`) im Registry: Fortschritt, Credits, Gegenstände. */
+export const REGISTRY_PROFILE = 'profile';
 
-/** Schlüssel für die Währung der Spielfigur im Registry (später: Spielstand). */
-export const REGISTRY_WALLET = 'wallet';
+export const CRIT_MULTIPLIER = 1.5;
+
+export const LOOT = {
+  /** Abstand, ab dem die Figur Beute automatisch aufhebt. */
+  pickupRadius: 24,
+  /** Wie weit Beute beim Fallen vom Ursprung wegspringt. */
+  popDistance: 22,
+} as const;
+
+/** Gegnerstärke wächst mit der Spielerstufe, etwas langsamer als die Figur selbst. */
+export const LEVEL_SCALING = { hpPerLevel: 0.06, damagePerLevel: 0.04 } as const;
 
 export const POTION = {
   charges: 3,

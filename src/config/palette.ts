@@ -14,6 +14,8 @@ export const COLORS = {
   uiPanel: 0x121a30,
   accent: 0xf59e0b,
   telegraph: 0xff4d4d,
+  rarity: { common: 0xb8c0d0, uncommon: 0x5ad66f, rare: 0x4aa3ff, epic: 0xb36bff, legendary: 0xff9a2e },
+  origin: { earth: 0x3fbf9f, mars: 0xe0603a, belt: 0xd9a441 },
   credits: '#ffd34d',
   exitOpen: 0x52e08a,
   exitLocked: 0xc0453d,
@@ -23,5 +25,6 @@ export const COLORS = {
   elite: '#ffd34d',
   guard: 0x58b4ff,
   damage: '#ffe08a',
+  crit: '#ff9a2e',
   damageTaken: '#ff8a8a',
 } as const;

@@ -5,9 +5,9 @@ import {
   GAME_EVENTS,
   MAX_FRAME_SECONDS,
   MISSION_EVENTS,
-  POTION,
-  REGISTRY_PROGRESSION,
-  REGISTRY_WALLET,
+  LEVEL_SCALING,
+  LOOT,
+  REGISTRY_PROFILE,
   SCENE_KEYS,
   TEXTURE_KEYS,
   TEXTURE_RES,
@@ -19,25 +19,30 @@ import { generateDungeon } from '../core/dungeon';
 import { planMission } from '../core/encounters';
 import type { TileGrid } from '../core/grid';
 import { parseLevel } from '../core/level';
+import { rollItem } from '../core/items';
 import type { Vec2 } from '../core/math';
-import { Progression } from '../core/progression';
+import { Profile } from '../core/profile';
 import { createRng } from '../core/rng';
 import type { Rng } from '../core/rng';
-import { Wallet } from '../core/wallet';
 import { CLASSES } from '../data/classes';
 import { ENEMIES } from '../data/enemies';
 import type { EnemyId } from '../data/enemies';
+import { ITEM_RULES } from '../data/items';
 import { TEST_ARENA, TEST_ARENA_WAVES } from '../data/levels/testArena';
+import { DROP_CHANCE, RARITY_WEIGHTS } from '../data/loot';
 import { ACT1_SPAWNS } from '../data/spawnTables';
+import type { LootSource } from '../data/types';
 import type { Actor, Team } from '../entities/Actor';
 import { Chest } from '../entities/Chest';
 import { Enemy } from '../entities/Enemy';
 import type { Difficulty } from '../entities/Enemy';
 import { ExitPortal } from '../entities/ExitPortal';
+import { LootDrop } from '../entities/LootDrop';
 import { Player } from '../entities/Player';
 import type { WorldContext } from '../entities/WorldContext';
 import { t } from '../i18n';
 import type { TextKey } from '../i18n';
+import { itemName } from '../i18n/items';
 import { CombatSystem } from '../systems/CombatSystem';
 import { FogSystem } from '../systems/FogSystem';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
@@ -60,6 +65,7 @@ export interface MissionStats {
   chestsTotal: number;
   credits: number;
   xp: number;
+  items: number;
 }
 
 export function randomSeed(): number {
@@ -78,6 +84,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   player!: Player;
   enemies: Enemy[] = [];
   chests: Chest[] = [];
+  drops: LootDrop[] = [];
   exitPortal: ExitPortal | null = null;
   fog: FogSystem | null = null;
   config: MissionConfig = { kind: 'dungeon', seed: 1 };
@@ -104,6 +111,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   create(): void {
     this.enemies = [];
     this.chests = [];
+    this.drops = [];
     this.exitPortal = null;
     this.fog = null;
     this.guardians = new Set();
@@ -112,7 +120,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.deathAnnounced = false;
     this.missionOver = false;
     this.objectiveKey = null;
-    this.stats = { timeMs: 0, kills: 0, chestsOpened: 0, chestsTotal: 0, credits: 0, xp: 0 };
+    this.stats = { timeMs: 0, kills: 0, chestsOpened: 0, chestsTotal: 0, credits: 0, xp: 0, items: 0 };
     this.startedAtMs = this.time.now;
 
     this.rng = createRng(Date.now());
@@ -123,7 +131,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     else this.buildArena();
     this.createTilemap();
 
-    this.player = new Player(this, this, this.playerStart.x, this.playerStart.y, CLASSES.amos, this.progression());
+    this.player = new Player(this, this, this.playerStart.x, this.playerStart.y, CLASSES.amos, this.profile());
     this.spawnPending();
 
     if (this.config.kind === 'dungeon') {
@@ -139,7 +147,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
       this.player,
       () => this.enemies,
       (x, y) => (this.scene.get(SCENE_KEYS.hud) as HudScene).isOverUi(x, y),
-      () => this.player.isDead || this.missionOver,
+      () => this.player.isDead || this.missionOver || this.sys.isPaused(),
     );
 
     this.events.on(MISSION_EVENTS.actorKilled, this.onActorKilled, this);
@@ -168,6 +176,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
       }
       return;
     }
+    this.collectLoot();
     if (this.config.kind === 'dungeon') this.updateDungeon(time);
     else this.updateArena();
   }
@@ -210,8 +219,10 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
 
   /** Legt Gegner, Truhen und Ausgang an, sobald die Welt steht. */
   private spawnPending(): void {
+    const steps = this.player.progression.level - 1;
+    const difficulty = { hp: 1 + LEVEL_SCALING.hpPerLevel * steps, damage: 1 + LEVEL_SCALING.damagePerLevel * steps };
     for (const e of this.pendingEnemies) {
-      const enemy = this.spawnEnemy(e.id, e.x, e.y);
+      const enemy = this.spawnEnemy(e.id, e.x, e.y, difficulty);
       if (e.guardian) this.guardians.add(enemy);
     }
     this.chests = this.pendingChests.map((c) => new Chest(this, c.x, c.y));
@@ -266,17 +277,21 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     chest.markOpened();
     this.stats.chestsOpened++;
     const credits = this.rng.int(CHEST.creditsMin, CHEST.creditsMax);
-    this.wallet().add(credits);
+    this.profile().wallet.add(credits);
     this.stats.credits += credits;
+    this.dropLoot('chest', chest.x, chest.y);
     this.combat.floatText(chest.x, chest.y - 18, t('hud.credits', { amount: credits }), COLORS.credits, 14);
     this.combat.ring(chest.x, chest.y, 30, 0xffd34d, 350);
-    if (this.rng.chance(CHEST.potionChance) && this.player.potions < POTION.maxCarry) this.player.potions++;
+    if (this.rng.chance(CHEST.potionChance) && this.player.potions < this.player.maxPotions) this.player.potions++;
+    this.profile().touch();
   }
 
   private completeMission(): void {
     this.missionOver = true;
     this.stats.timeMs = this.time.now - this.startedAtMs;
     this.player.cancelCommands();
+    this.profile().missionsCompleted++;
+    this.profile().touch();
     this.game.events.emit(GAME_EVENTS.missionCompleted, { ...this.stats });
   }
 
@@ -329,23 +344,47 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     return team === 'player' ? [this.player] : this.enemies;
   }
 
-  /** Erfahrung und Stufe bleiben über Neustarts erhalten; später kommen sie aus dem Spielstand. */
-  private progression(): Progression {
-    let progression = this.registry.get(REGISTRY_PROGRESSION) as Progression | undefined;
-    if (!progression) {
-      progression = new Progression();
-      this.registry.set(REGISTRY_PROGRESSION, progression);
+  /** Spielstand (Fortschritt, Credits, Gegenstände); wird beim Start in `main.ts` geladen. */
+  private profile(): Profile {
+    let profile = this.registry.get(REGISTRY_PROFILE) as Profile | undefined;
+    if (!profile) {
+      profile = new Profile(ITEM_RULES);
+      this.registry.set(REGISTRY_PROFILE, profile);
     }
-    return progression;
+    return profile;
   }
 
-  private wallet(): Wallet {
-    let wallet = this.registry.get(REGISTRY_WALLET) as Wallet | undefined;
-    if (!wallet) {
-      wallet = new Wallet();
-      this.registry.set(REGISTRY_WALLET, wallet);
+  /** Würfelt Beute für die Quelle und legt sie neben `(x, y)` ab. */
+  private dropLoot(source: LootSource, x: number, y: number): void {
+    if (!this.rng.chance(DROP_CHANCE[source])) return;
+    const item = rollItem(this.rng, ITEM_RULES, {
+      itemLevel: this.player.progression.level,
+      rarityWeights: RARITY_WEIGHTS[source],
+    });
+    const offset = LootDrop.randomOffset(this.rng);
+    const drop = new LootDrop(this, x + offset.x, y + offset.y, item);
+    // Nie in eine Wand fallen lassen.
+    if (this.grid.isSolid(this.grid.toCol(drop.x), this.grid.toRow(drop.y))) drop.setPosition(x, y);
+    drop.popFrom(x, y);
+    this.drops.push(drop);
+  }
+
+  /** Hebt Beute auf, über die die Figur läuft; bei vollem Rucksack bleibt sie liegen. */
+  private collectLoot(): void {
+    const inventory = this.profile().inventory;
+    for (const drop of this.drops) {
+      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, drop.x, drop.y) > LOOT.pickupRadius) continue;
+      if (inventory.add(drop.item)) {
+        this.drops = this.drops.filter((d) => d !== drop);
+        this.stats.items++;
+        this.combat.floatText(drop.x, drop.y - 16, t('inv.picked', { name: itemName(drop.item) }), rarityColor(drop.item.rarity), 12);
+        drop.destroy();
+        this.profile().touch();
+      } else if (this.time.now - drop.lastFullWarningMs > 1500) {
+        drop.lastFullWarningMs = this.time.now;
+        this.combat.floatText(drop.x, drop.y - 16, t('inv.bagFull'), COLORS.damageTaken, 12);
+      }
     }
-    return wallet;
   }
 
   private onActorKilled(victim: Actor): void {
@@ -353,6 +392,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.stats.kills++;
     this.stats.xp += victim.def.xp;
     this.player.gainXp(victim.def.xp);
+    this.dropLoot(this.guardians.has(victim) ? 'guardian' : (victim.def.loot ?? 'enemy'), victim.x, victim.y);
+    this.profile().touch();
     this.combat.floatText(victim.x, victim.y - victim.radius - 18, t('hud.xp', { amount: victim.def.xp }), COLORS.xpText, 12);
   }
 
@@ -360,4 +401,8 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   private restart(): void {
     this.scene.restart(this.config.kind === 'dungeon' ? { kind: 'dungeon', seed: randomSeed() } : this.config);
   }
+}
+
+function rarityColor(rarity: keyof typeof COLORS.rarity): string {
+  return `#${COLORS.rarity[rarity].toString(16).padStart(6, '0')}`;
 }

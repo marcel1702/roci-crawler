@@ -33,14 +33,15 @@ npm run icons      # PWA-Icons aus public/favicon.svg neu erzeugen
 src/
   core/        Reine Spiellogik, KEIN Phaser-Import. Gut testbar (tests/core).
                Raster, Kollision, Pfadfindung, Wegverfolgung, Kampfformeln, Werte/Stufen, Geschosse,
-               Dungeon-Generator, Begegnungsplanung, Nebel, Zufall (seeded).
+               Dungeon-Generator, Begegnungsplanung, Nebel, Gegenstände, Inventar, Spielstand-Format, Zufall (seeded).
   data/        Statische Inhalte (Klassen, Gegner, Level) als typisierte Objekte. Keine Logik, keine Texte.
   abilities/   Wirkung der Klassenfähigkeiten (Phaser-abhängig), Registry `ABILITIES` je `AbilityId`.
-  entities/    Phaser-Objekte mit Zustand: Actor (Basis), Player, Enemy, Chest, ExitPortal.
+  entities/    Phaser-Objekte mit Zustand: Actor (Basis), Player, Enemy, Chest, ExitPortal, LootDrop.
   systems/     Eigenständige Spielsysteme pro Szene: Eingabe (Tippen), Kampf, Geschosse, Kamera, Trennung, Nebel.
-  scenes/      Dünn halten: BootScene, MissionScene (Spielwelt), HudScene (Oberfläche darüber).
+  scenes/      Dünn halten: BootScene, MissionScene (Spielwelt), HudScene (Oberfläche darüber), InventoryScene (Overlay, pausiert die Mission).
   ui/          Wiederverwendbare HUD-Bausteine.
   graphics/    Erzeugung der Platzhalter-Texturen.
+  persistence/ Spielstand im Browser-Speicher (SaveStore) und Autospeichern; kennt nur `core`.
   platform/    Gerätenahes: HiDPI-Skalierung, Safe-Area.
   pwa/         Service-Worker-Registrierung und Update-Hinweis.
   i18n/        t(key), Sprachtabellen (de.ts ist die Referenz).
@@ -78,7 +79,7 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 ## Tests & Prüfen
 
 - Neue Logik in `src/core` bekommt Vitest-Tests in `tests/core`.
-- URL-Parameter: `?seed=<zahl>` (feste Karte), `?mode=arena` (Testarena). Der Seed steht im Dev-Modus unten links im HUD.
+- URL-Parameter: `?seed=<zahl>` (feste Karte), `?mode=arena` (Testarena), `?reset` (frischer Spielstand). Der Seed steht im Dev-Modus unten links im HUD.
 - Dev-Server stellt `window.__roci` (das Phaser-Spiel) bereit: für Konsole und automatisierte Browser-Tests. Nützlich: `scene.getScene('MissionScene').spawnEnemy('gunner', x, y)`, `.player.useAbility(i)`, `.player.gainXp(n)`.
 - Beim Prüfen im Headless-Browser beachten: Phaser deckelt `delta` in den ersten ~120 Frames nach dem Start auf einen Frame. Vor Bewegungstests ca. 5 s warten.
 - Vor jeder Übergabe: `npm run check` und `npm run build`.

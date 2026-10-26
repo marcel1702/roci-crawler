@@ -36,7 +36,7 @@ const rammbock: AbilityDef = {
     const target = pickTarget(player, world.enemies);
     const angle = target ? Math.atan2(target.y - player.y, target.x - player.x) : player.facing;
     player.startDash(angle, RAMMBOCK.distance, RAMMBOCK.speed, (enemy) => {
-      world.combat.dealDamage(player, enemy, world.combat.rollDamage(player, RAMMBOCK.damageMultiplier));
+      world.combat.attack(player, enemy, RAMMBOCK.damageMultiplier);
       enemy.stun(RAMMBOCK.stunMs);
       world.combat.ring(enemy.x, enemy.y, 34, COLORS.accent, 220);
       player.scene.cameras.main.shake(110, 0.006);
@@ -71,7 +71,7 @@ const gnadenloserSchlag: AbilityDef = {
     const hit = world.enemies.filter((enemy) => !enemy.isDead && edgeDistance(player, enemy) <= SCHLAG.radius);
     if (hit.length === 0) return false;
     for (const enemy of hit) {
-      world.combat.dealDamage(player, enemy, world.combat.rollDamage(player, SCHLAG.damageMultiplier));
+      world.combat.attack(player, enemy, SCHLAG.damageMultiplier);
       enemy.stun(SCHLAG.stunMs);
     }
     world.combat.ring(player.x, player.y, SCHLAG.radius + player.radius, 0xffffff, 300);

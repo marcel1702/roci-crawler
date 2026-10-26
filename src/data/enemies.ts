@@ -46,6 +46,7 @@ export const ENEMIES = {
     color: 0x8e2b2b,
     elite: true,
     xp: 80,
+    loot: 'elite',
     stats: {
       maxHp: 170,
       moveSpeed: 68,

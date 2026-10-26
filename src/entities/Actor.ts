@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { actorTextureKey, TEXTURE_KEYS, TEXTURE_SCALE } from '../config/constants';
 import { moveCircle } from '../core/collision';
 import { isInReach } from '../core/combat';
+import { armorReduction } from '../core/items';
 import { Cooldown } from '../core/cooldown';
 import { PathFollower } from '../core/follower';
 import type { ActorStats } from '../core/stats';
@@ -22,6 +23,12 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   hp: number;
   /** Faktor auf erlittenen Schaden (0.5 = halber Schaden). */
   damageTakenMultiplier = 1;
+  /** Panzerung hält einen Teil des Schadens ab (siehe `armorReduction`). */
+  armor = 0;
+  /** Wahrscheinlichkeit auf einen kritischen Treffer, 0..1. */
+  critChance = 0;
+  /** Anteil des verursachten Schadens, der als Leben zurückkommt. */
+  lifesteal = 0;
 
   protected readonly follower = new PathFollower();
   protected readonly attackCooldown = new Cooldown();
@@ -85,7 +92,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
   /** Zieht Lebenspunkte ab (nach Schadensfaktor) und liefert den tatsächlichen Schaden. */
   takeDamage(amount: number): number {
     if (this.dead) return 0;
-    const dealt = Math.max(1, Math.round(amount * this.damageTakenMultiplier));
+    const dealt = Math.max(1, Math.round(amount * this.damageTakenMultiplier * (1 - armorReduction(this.armor))));
     this.hp = Math.max(0, this.hp - dealt);
     this.flashHit();
     this.onDamaged();
