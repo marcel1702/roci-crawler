@@ -1,20 +1,10 @@
+import type { ActorStats, LevelGrowth } from '../core/stats';
 import type { TextKey } from '../i18n';
 
-/** Kampfwerte, die jeder Akteur (Spieler wie Gegner) hat. Längen in Welt-Pixeln, Zeiten in ms. */
-export interface ActorStats {
-  maxHp: number;
-  /** Pixel pro Sekunde. */
-  moveSpeed: number;
-  /** Kollisions- und Trefferradius. */
-  radius: number;
-  damageMin: number;
-  damageMax: number;
-  /** Nahkampfreichweite, vom Rand des Angreifers zum Rand des Ziels gemessen. */
-  attackRange: number;
-  attackCooldownMs: number;
-}
-
 export type ClassId = 'amos' | 'naomi' | 'bobbie' | 'holden';
+
+/** Fähigkeiten aller Klassen; die Wirkung steht in `src/abilities`, hier nur die Kennung. */
+export type AbilityId = 'rammbock' | 'standhaft' | 'gnadenloser-schlag';
 
 export interface ClassDef {
   id: ClassId;
@@ -22,13 +12,35 @@ export interface ClassDef {
   roleKey: TextKey;
   color: number;
   stats: ActorStats;
+  growth: LevelGrowth;
+  /** Belegung der drei Fähigkeiten-Tasten. */
+  abilities: readonly [AbilityId, AbilityId, AbilityId];
 }
+
+/**
+ * Wie ein Gegner angreift. Jeder Angriff hat eine Ankündigung (`windupMs`), in der der Gegner stillsteht
+ * und die Gefahrenzone zeigt; wer sich währenddessen herausbewegt, wird nicht getroffen.
+ */
+export type EnemyAttack =
+  | { kind: 'melee'; windupMs: number }
+  | { kind: 'slam'; windupMs: number; radius: number }
+  | {
+      kind: 'ranged';
+      windupMs: number;
+      projectileSpeed: number;
+      /** Unterschreitet der Spieler diesen Abstand (Mittelpunkte), weicht der Gegner zurück. */
+      minRange: number;
+    };
 
 export interface EnemyDef {
   id: string;
   nameKey: TextKey;
   color: number;
+  elite?: boolean;
+  /** Erfahrung für den Spieler beim Besiegen. */
+  xp: number;
   stats: ActorStats;
+  attack: EnemyAttack;
   /** Ab diesem Abstand (Mittelpunkte) bemerkt der Gegner den Spieler. */
   aggroRange: number;
   /** Ab diesem Abstand gibt der Gegner die Verfolgung auf. */

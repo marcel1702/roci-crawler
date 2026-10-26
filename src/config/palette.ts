@@ -13,6 +13,12 @@ export const COLORS = {
   uiDim: 0x7d8aa8,
   uiPanel: 0x121a30,
   accent: 0xf59e0b,
+  telegraph: 0xff4d4d,
+  xp: 0x5aa9ff,
+  xpText: '#8ec5ff',
+  heal: '#8dffb0',
+  elite: '#ffd34d',
+  guard: 0x58b4ff,
   damage: '#ffe08a',
   damageTaken: '#ff8a8a',
 } as const;

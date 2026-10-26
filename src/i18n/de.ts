@@ -3,11 +3,21 @@ export const de = {
   'class.amos.name': 'Amos Burton',
   'class.amos.role': 'Nahkampf-Tank',
 
+  'ability.rammbock.name': 'Rammbock',
+  'ability.standhaft.name': 'Standhaft',
+  'ability.gnadenloser-schlag.name': 'Gnadenloser Schlag',
+
   'enemy.thug.name': 'Gang-Schläger',
+  'enemy.gunner.name': 'Gang-Schütze',
+  'enemy.brute.name': 'Gang-Brecher',
 
   'hud.hint.controls': 'Tippen: Laufen  ·  Gegner antippen: Angreifen',
   'hud.hp': 'LP {current}/{max}',
-  'hud.waveCleared': 'Arena geräumt – nächste Welle naht …',
+  'hud.level': 'Stufe {level}',
+  'hud.levelUp': 'Stufe {level} erreicht!',
+  'hud.xp': '+{amount} EP',
+  'hud.wave': 'Welle {wave}',
+  'hud.waveCleared': 'Welle geräumt – die nächste naht …',
   'hud.death.title': 'Besiegt',
   'hud.death.retry': 'Tippen für Neustart',
 

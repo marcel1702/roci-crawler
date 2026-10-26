@@ -14,8 +14,12 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
   createRing(scene, TEXTURE_KEYS.targetRing, 17, 2.2, COLORS.accent, 0.95);
   createRing(scene, TEXTURE_KEYS.moveMarker, 11, 2.5, 0xffffff, 0.9);
 
-  for (const def of Object.values(CLASSES)) createActor(scene, def.id, def.color, def.stats.radius);
-  for (const def of Object.values(ENEMIES)) createActor(scene, def.id, def.color, def.stats.radius);
+  createProjectile(scene);
+
+  for (const def of Object.values(CLASSES)) createActor(scene, def.id, def.color, def.stats.radius, false);
+  for (const def of Object.values(ENEMIES)) {
+    createActor(scene, def.id, def.color, def.stats.radius, 'elite' in def && def.elite === true);
+  }
 }
 
 function drawTexture(
@@ -78,14 +82,23 @@ function createRing(
   });
 }
 
-/** Runde Figur mit Nase nach rechts (+x); gedreht wird beim Zeichnen die Blickrichtung. */
-function createActor(scene: Phaser.Scene, id: string, color: number, radius: number): void {
-  const size = 40;
+/** Runde Figur mit Nase nach rechts (+x); gedreht wird beim Zeichnen die Blickrichtung. Elite: goldener Rand. */
+function createActor(scene: Phaser.Scene, id: string, color: number, radius: number, elite: boolean): void {
+  const size = Math.ceil((radius + 9) * 2);
   const c = size / 2;
   drawTexture(scene, actorTextureKey(id), size, size, (g) => {
-    g.fillStyle(0x000000, 0.55).fillCircle(c, c, radius + 1.5);
-    g.fillStyle(color, 1).fillCircle(c, c, radius);
+    g.fillStyle(elite ? 0xffd34d : 0x000000, elite ? 0.95 : 0.55).fillCircle(c, c, radius + 2);
+    g.fillStyle(0x000000, 0.55).fillCircle(c, c, radius + 0.5);
+    g.fillStyle(color, 1).fillCircle(c, c, radius - 0.5);
     g.fillStyle(0xffffff, 0.22).fillCircle(c - radius * 0.3, c - radius * 0.3, radius * 0.5);
     g.fillStyle(0xffffff, 0.9).fillTriangle(c + radius - 3, c - 4.5, c + radius + 5, c, c + radius - 3, c + 4.5);
+  });
+}
+
+function createProjectile(scene: Phaser.Scene): void {
+  drawTexture(scene, TEXTURE_KEYS.projectile, 14, 14, (g) => {
+    g.fillStyle(0xffb347, 0.35).fillCircle(7, 7, 6);
+    g.fillStyle(0xffe08a, 1).fillCircle(7, 7, 3.2);
+    g.fillStyle(0xffffff, 1).fillCircle(7, 7, 1.6);
   });
 }

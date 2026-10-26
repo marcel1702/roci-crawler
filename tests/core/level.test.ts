@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseLevel } from '../../src/core/level';
-import { TEST_ARENA } from '../../src/data/levels/testArena';
+import { ENEMIES } from '../../src/data/enemies';
+import { TEST_ARENA, TEST_ARENA_WAVES } from '../../src/data/levels/testArena';
 
 describe('parseLevel', () => {
   it('liest Raster, Spielerstart und Gegner-Spawns', () => {
@@ -30,6 +31,24 @@ describe('parseLevel', () => {
     expect(level.enemySpawns.length).toBeGreaterThan(0);
     for (const spawn of [level.playerStart, ...level.enemySpawns]) {
       expect(level.grid.isWalkable(level.grid.toCol(spawn.x), level.grid.toRow(spawn.y))).toBe(true);
+    }
+  });
+});
+
+describe('Gegnerwellen der Testarena', () => {
+  it('verweisen nur auf bekannte Gegner und passen zur Anzahl der Spawnpunkte (Versatz erlaubt)', () => {
+    expect(TEST_ARENA_WAVES.length).toBeGreaterThan(0);
+    for (const wave of TEST_ARENA_WAVES) {
+      expect(wave.length).toBeGreaterThan(0);
+      for (const id of wave) expect(ENEMIES[id]).toBeDefined();
+    }
+  });
+
+  it('jeder Gegnertyp hat eine Ankündigung (Windup) und gültige Reichweiten', () => {
+    for (const def of Object.values(ENEMIES)) {
+      expect(def.attack.windupMs).toBeGreaterThan(0);
+      expect(def.leashRange).toBeGreaterThan(def.aggroRange);
+      expect(def.xp).toBeGreaterThan(0);
     }
   });
 });

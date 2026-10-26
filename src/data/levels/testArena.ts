@@ -1,12 +1,13 @@
 import type { LevelLayout } from '../../core/level';
+import type { EnemyId } from '../enemies';
 
-/** Testarena für Meilenstein 1: zwei Räume mit Durchgang, Säulen und ein Wandstück zum Umlaufen. */
+/** Testarena: zwei Räume mit Durchgang, Säulen und ein Wandstück zum Umlaufen. `e` = möglicher Gegner-Spawn. */
 export const TEST_ARENA: LevelLayout = {
   rows: [
     '####################################',
     '#.............#...............#....#',
     '#.............#...............#....#',
-    '#..@..........#...e...........#....#',
+    '#..@..........#...e.........e.#....#',
     '#.............#........##.....#....#',
     '#.....##......#........##.....######',
     '#.....##......#....................#',
@@ -20,10 +21,19 @@ export const TEST_ARENA: LevelLayout = {
     '#.............#.....#..............#',
     '#.....##......#.........e...##.....#',
     '#.....##......#.............##.....#',
-    '#.............#....................#',
+    '#.........e...#....................#',
     '#.............#...e.....##.........#',
     '#.............#.........##.........#',
     '#.............#....................#',
     '####################################',
   ],
 };
+
+/** Gegnerwellen der Testarena; nach der letzten beginnt die Folge von vorn, mit wachsender Stärke. */
+export const TEST_ARENA_WAVES: readonly (readonly EnemyId[])[] = [
+  ['thug', 'thug', 'thug'],
+  ['thug', 'thug', 'thug', 'gunner'],
+  ['thug', 'thug', 'gunner', 'gunner'],
+  ['brute', 'thug', 'thug'],
+  ['brute', 'gunner', 'gunner', 'thug', 'thug'],
+];

@@ -36,7 +36,7 @@ Eine Durchspielzeit von etwa **3–5 Stunden** `[Vorgabe]`, mit Wiederspielwert 
 | 3 Fähigkeiten-Tasten | Unten rechts im Bogen (Daumenbereich), Abklingzeit statt Ressourcen |
 
 Treffer-Toleranz: Gegner lassen sich mit einem Rand von 16 px sicher antippen. Taps auf HUD-Elemente lösen nie Bewegung aus.
-Mehrfingerbedienung: Laufen und Fähigkeiten gleichzeitig. `[Vorschlag]` Zusätzlich später eine Trank-Taste.
+Mehrfingerbedienung: Laufen und Fähigkeiten gleichzeitig. Zusätzlich eine kleinere **Trank-Taste** in der Mitte des Tastenfächers `[Umgesetzt]`.
 
 ## 4. Spielschleife
 
@@ -59,6 +59,16 @@ Pro Spielstand wird **eine** Klasse gewählt. Jede hat Grundangriff (automatisch
 | **Bobbie** | Power-Rüstung, Fernkampf | Rüstungs-Sturmgewehr | Raketensalve (Fläche) · Rüstung versiegeln (Schild) · Gauss-Schuss (Durchschlag) | Schwerwaffen · Panzerung · Präzision |
 | **Holden** | Anführer / Support | Pistole | Crew-Rufe: Sperrfeuer der Rocinante · Amos greift ein · Naomis Drohne; Inspirieren (Heilung + Tempo) | Befehle · Diplomatie (Gegner verwirren) · Überlebender |
 
+**Amos, wie umgesetzt (Meilenstein 2)** `[Umgesetzt]`, alle Zahlen sind Startwerte für das spätere Balancing:
+
+| Fähigkeit | Wirkung | Abklingzeit |
+|---|---|---|
+| Rammbock | Stürmt bis 140 px auf das Angriffsziel (sonst den nächsten Gegner, sonst geradeaus), stoppt am ersten gerammten Gegner: 150 % Schaden, 1,2 s Betäubung | 7 s |
+| Standhaft | 4,5 s halber Schaden; zieht Gegner im Umkreis von 230 px heran, Schützen halten keinen Abstand mehr | 14 s |
+| Gnadenloser Schlag | Flächenschlag (72 px): 220 % Schaden und 0,5 s Betäubung. Ohne Gegner in Reichweite passiert nichts und es beginnt keine Abklingzeit | 9 s |
+
+Stufenwachstum Amos: +12 Lebenspunkte und +6 % Schaden pro Stufe.
+
 Support im Einzelspiel: Holdens Besonderheit sind **Crew-Rufe** (Fähigkeiten, die die übrigen Figuren als Unterstützung einsetzen).
 
 ## 6. Akte `[Vorgabe]`, Inhalte `[Vorschlag]`
@@ -70,6 +80,18 @@ Support im Einzelspiel: Holdens Besonderheit sind **Crew-Rufe** (Fähigkeiten, d
 | **3** | Ganymed / Ringtore | Hybrid-Soldaten, Wachdrohnen | Hybrid-Kommandant (Arbeitsname) | Mischung aus allem, Finale am Ringtor |
 
 Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in Dialogen auf. Umfang: je Akt ca. 4 Missionen + Boss, 60–75 Minuten.
+
+### Kampf und Gegner-Regeln `[Umgesetzt, Meilenstein 2]`
+
+**Lesbarkeit vor Härte:** Jeder Gegnerangriff wird vorher durch eine **rote Gefahrenzone** angekündigt. Die Richtung wird beim Start festgelegt; wer sich herausbewegt, wird nicht getroffen. Betäubung unterbricht den Angriff.
+
+| Gegner (Akt 1) | Rolle | Angriff und Ankündigung | Besonderheit |
+|---|---|---|---|
+| **Gang-Schläger** | Nahkämpfer, in Gruppen | Schlag, 0,3 s Ankündigung (roter Kegel) | schnell, schwach |
+| **Gang-Schütze** | Fernkämpfer | Schuss, 0,5 s Ankündigung (rote Schusslinie), Geschoss fliegt sichtbar | hält Abstand, braucht Sichtlinie, Wände sind Deckung |
+| **Gang-Brecher** (Elite) | Zäher Brocken | Flächenschlag, 0,75 s Ankündigung (wachsender roter Kreis), 62 px | langsam, goldener Rand, 80 EP |
+
+Gegner bemerken den Spieler ab einer Aggro-Reichweite oder wenn sie getroffen werden und geben bei großer Entfernung auf.
 
 ## 7. Dungeons `[Vorgabe: zufallsgeneriert]`, Verfahren `[Vorschlag]`
 
@@ -106,7 +128,9 @@ Quellen: Gegner-Drops, Truhen, Bosse (garantiert Selten+), Händler.
 
 ## 10. Fortschritt `[Vorgabe]`, Zahlen `[Vorschlag]`
 
-- Level 1–30; ca. 10 Level pro Akt. Pro Level ein Talentpunkt ab Level 2.
+- Level 1–30; ca. 10 Level pro Akt. Pro Level ein Talentpunkt ab Level 2 (Talente: Meilenstein 6).
+- Erfahrung für die nächste Stufe: `30 + 20·Stufe + 3·Stufe²`; Stufenaufstieg heilt vollständig. Schläger 15 EP, Schütze 20 EP, Brecher 80 EP `[Umgesetzt, Startwerte]`.
+- Tränke: 3 pro Mission, heilen 40 % der maximalen Lebenspunkte, 4 s Abklingzeit `[Umgesetzt]`.
 - Kleiner Talentbaum: 3 Zweige mit je 4 Knoten pro Klasse (ca. 12 Knoten), Respec im Hub gegen Credits.
 - Schwierigkeit skaliert pro Akt; kein Level-Grind nötig, Wiederholen früherer Missionen bleibt möglich.
 

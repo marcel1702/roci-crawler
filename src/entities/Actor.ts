@@ -4,7 +4,7 @@ import { moveCircle } from '../core/collision';
 import { isInReach } from '../core/combat';
 import { Cooldown } from '../core/cooldown';
 import { PathFollower } from '../core/follower';
-import type { ActorStats } from '../data/types';
+import type { ActorStats } from '../core/stats';
 import type { WorldContext } from './WorldContext';
 
 /** Läuft ein Akteur weniger als diesen Anteil seiner Sollstrecke, gilt er als blockiert. */
@@ -14,18 +14,21 @@ const HIT_FLASH_MS = 70;
 
 export type Team = 'player' | 'enemy';
 
-/** Basis für Spielerfigur und Gegner: Lebenspunkte, Wandkollision, Wegverfolgung und Nahkampf. */
+/** Basis für Spielerfigur und Gegner: Lebenspunkte, Wandkollision, Wegverfolgung, Betäubung und Nahkampf. */
 export abstract class Actor extends Phaser.GameObjects.Container {
   abstract readonly team: Team;
 
-  readonly stats: ActorStats;
+  stats: ActorStats;
   hp: number;
+  /** Faktor auf erlittenen Schaden (0.5 = halber Schaden). */
+  damageTakenMultiplier = 1;
 
   protected readonly follower = new PathFollower();
   protected readonly attackCooldown = new Cooldown();
   protected readonly sprite: Phaser.GameObjects.Image;
 
   private dead = false;
+  private stunMs = 0;
   private stuckSeconds = 0;
 
   protected constructor(
@@ -41,7 +44,7 @@ export abstract class Actor extends Phaser.GameObjects.Container {
     this.hp = stats.maxHp;
 
     const shadow = new Phaser.GameObjects.Image(scene, 0, stats.radius * 0.45, TEXTURE_KEYS.shadow);
-    shadow.setScale(TEXTURE_SCALE);
+    shadow.setScale(TEXTURE_SCALE * (stats.radius / 11));
     this.sprite = new Phaser.GameObjects.Image(scene, 0, 0, actorTextureKey(textureId));
     this.sprite.setScale(TEXTURE_SCALE);
     this.add([shadow, this.sprite]);
@@ -58,6 +61,15 @@ export abstract class Actor extends Phaser.GameObjects.Container {
     return this.dead;
   }
 
+  get isStunned(): boolean {
+    return this.stunMs > 0;
+  }
+
+  /** Blickrichtung in Radiant. */
+  get facing(): number {
+    return this.sprite.rotation;
+  }
+
   faceToward(x: number, y: number): void {
     this.sprite.rotation = Math.atan2(y - this.y, x - this.x);
   }
@@ -70,9 +82,11 @@ export abstract class Actor extends Phaser.GameObjects.Container {
     return moved;
   }
 
-  takeDamage(amount: number): void {
-    if (this.dead) return;
-    this.hp = Math.max(0, this.hp - amount);
+  /** Zieht Lebenspunkte ab (nach Schadensfaktor) und liefert den tatsächlichen Schaden. */
+  takeDamage(amount: number): number {
+    if (this.dead) return 0;
+    const dealt = Math.max(1, Math.round(amount * this.damageTakenMultiplier));
+    this.hp = Math.max(0, this.hp - dealt);
     this.flashHit();
     this.onDamaged();
     if (this.hp === 0) {
@@ -80,14 +94,33 @@ export abstract class Actor extends Phaser.GameObjects.Container {
       this.follower.clear();
       this.onDeath();
     }
+    return dealt;
+  }
+
+  /** Heilt bis zum Maximum und liefert die tatsächlich geheilte Menge. */
+  heal(amount: number): number {
+    if (this.dead) return 0;
+    const healed = Math.min(amount, this.stats.maxHp - this.hp);
+    this.hp += healed;
+    return healed;
+  }
+
+  stun(durationMs: number): void {
+    if (this.dead) return;
+    this.stunMs = Math.max(this.stunMs, durationMs);
+    this.follower.clear();
+    this.onStunned();
   }
 
   protected onDamaged(): void {}
+
+  protected onStunned(): void {}
 
   protected abstract onDeath(): void;
 
   protected tickTimers(dt: number): void {
     this.attackCooldown.update(dt * 1000);
+    if (this.stunMs > 0) this.stunMs = Math.max(0, this.stunMs - dt * 1000);
   }
 
   /** Greift an, wenn das Ziel in Reichweite und die Abklingzeit vorbei ist. */

@@ -44,8 +44,27 @@ export const REGISTRY_KEYS = {
 export const GAME_EVENTS = {
   missionReady: 'roci:mission-ready',
   playerDied: 'roci:player-died',
+  /** Payload: Wellennummer (1-basiert). */
+  waveStarted: 'roci:wave-started',
   waveCleared: 'roci:wave-cleared',
+  /** Payload: erreichte Stufe. */
+  playerLevelUp: 'roci:player-level-up',
   restartRequested: 'roci:restart-requested',
+} as const;
+
+/** Ereignisse innerhalb einer Szene (`scene.events`). Payload actorKilled: (Besiegter, Verursacher | null). */
+export const MISSION_EVENTS = {
+  actorKilled: 'mission:actor-killed',
+} as const;
+
+/** Schlüssel der Werte, die über Szenenneustarts hinweg leben (später: Spielstand). */
+export const REGISTRY_PROGRESSION = 'progression';
+
+export const POTION = {
+  charges: 3,
+  cooldownMs: 4000,
+  /** Anteil der maximalen Lebenspunkte, der geheilt wird. */
+  healFraction: 0.4,
 } as const;
 
 export const TEXTURE_KEYS = {
@@ -53,6 +72,7 @@ export const TEXTURE_KEYS = {
   shadow: 'shadow',
   targetRing: 'target-ring',
   moveMarker: 'move-marker',
+  projectile: 'projectile',
 } as const;
 
 export function actorTextureKey(id: string): string {

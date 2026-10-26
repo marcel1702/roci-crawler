@@ -32,10 +32,11 @@ npm run icons      # PWA-Icons aus public/favicon.svg neu erzeugen
 ```
 src/
   core/        Reine Spiellogik, KEIN Phaser-Import. Gut testbar (tests/core).
-               Raster, Kollision, Pfadfindung, Wegverfolgung, Kampfformeln, Zufall (seeded).
+               Raster, Kollision, Pfadfindung, Wegverfolgung, Kampfformeln, Werte/Stufen, Geschosse, Zufall (seeded).
   data/        Statische Inhalte (Klassen, Gegner, Level) als typisierte Objekte. Keine Logik, keine Texte.
+  abilities/   Wirkung der Klassenfähigkeiten (Phaser-abhängig), Registry `ABILITIES` je `AbilityId`.
   entities/    Phaser-Objekte mit Zustand: Actor (Basis), Player, Enemy.
-  systems/     Eigenständige Spielsysteme pro Szene: Eingabe (Tippen), Kampf, Kamera, Trennung.
+  systems/     Eigenständige Spielsysteme pro Szene: Eingabe (Tippen), Kampf, Geschosse, Kamera, Trennung.
   scenes/      Dünn halten: BootScene, MissionScene (Spielwelt), HudScene (Oberfläche darüber).
   ui/          Wiederverwendbare HUD-Bausteine.
   graphics/    Erzeugung der Platzhalter-Texturen.
@@ -52,6 +53,10 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 ## Konventionen
 
 - **Einheiten:** Längen in Welt-Pixeln (Kachel = 32), Geschwindigkeit in px/s, Zeiten in `core` und Daten in **ms**, in Update-Schleifen `dt` in **Sekunden** (auf 50 ms gedeckelt).
+- **Gegnerangriffe** haben immer eine Ankündigung (`windupMs` + rote Gefahrenzone); neue Gegner folgen dieser Regel (Lesbarkeit, siehe GDD).
+- **Neue Fähigkeit:** Kennung in `AbilityId` (`data/types.ts`), Wirkung in `src/abilities`, Text-Schlüssel `ability.<id>.name`, Eintrag in `ABILITIES`, Belegung in `data/classes.ts`.
+- **Schaden:** immer über `CombatSystem.dealDamage` (zeigt Zahlen, meldet Todesfälle über `MISSION_EVENTS.actorKilled`), nie direkt `takeDamage`.
+- **Fortschritt** (`Progression`) lebt im `game.registry` und überdauert Missionsneustarts; Meilenstein 4 ersetzt das durch den Spielstand.
 - **Entities** heißen ihre Update-Methode `tick()` (Phasers `update` ist belegt) und werden von der Szene aufgerufen.
 - **Texte:** Nie sichtbare Texte im Code. Immer `t('schluessel')`; Schlüssel in `src/i18n/de.ts`. Daten verweisen mit `TextKey`.
 - **Zufall:** Nur über `Rng` aus `core/rng.ts` (seeded), nie `Math.random()`, damit Dungeons und Beute reproduzierbar sind.
@@ -70,6 +75,6 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 ## Tests & Prüfen
 
 - Neue Logik in `src/core` bekommt Vitest-Tests in `tests/core`.
-- Dev-Server stellt `window.__roci` (das Phaser-Spiel) bereit: für Konsole und automatisierte Browser-Tests.
+- Dev-Server stellt `window.__roci` (das Phaser-Spiel) bereit: für Konsole und automatisierte Browser-Tests. Nützlich: `scene.getScene('MissionScene').spawnEnemy('gunner', x, y)`, `.player.useAbility(i)`, `.player.gainXp(n)`.
 - Beim Prüfen im Headless-Browser beachten: Phaser deckelt `delta` in den ersten ~120 Frames nach dem Start auf einen Frame. Vor Bewegungstests ca. 5 s warten.
 - Vor jeder Übergabe: `npm run check` und `npm run build`.

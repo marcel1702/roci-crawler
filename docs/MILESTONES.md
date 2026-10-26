@@ -6,7 +6,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | # | Titel | Inhalt | Fertig, wenn … | Umfang |
 |---|---|---|---|---|
 | **1** | **Fundament** ✅ | Vite + TypeScript + Phaser 3, PWA (offline, installierbar), Dev-Server im WLAN, Testarena, Spielfigur (Amos) mit Tippen-zum-Laufen, Pfadfindung, Gegner mit einfacher KI, Nahkampf, HUD-Grundlayout, Hoch- und Querformat | Auf dem Tablet läuft die Figur per Tippen, greift Gegner an, stirbt und startet neu; die gebaute App startet offline | M |
-| **2** | Kampfkern | 3 Fähigkeiten-Tasten (Amos) mit Abklingzeit, Fernkampf-Gegner mit Projektilen und Sichtlinie, Elite-Gegner, Angriffs-Ankündigung, Erfahrung und Stufenaufstieg, Trank-Taste | Ein Kampf mit 3 Gegnertypen macht Spaß und ist fair lesbar | M |
+| **2** | Kampfkern ✅ | 3 Fähigkeiten-Tasten (Amos) mit Abklingzeit, Fernkampf-Gegner mit Projektilen und Sichtlinie, Elite-Gegner, Angriffs-Ankündigung, Erfahrung und Stufenaufstieg, Trank-Taste | Ein Kampf mit 3 Gegnertypen macht Spaß und ist fair lesbar | M |
 | **3** | Dungeon-Generator | Seeded Räume-und-Gänge-Generator, Spawn-Tabellen, Truhen, Missionsziel (Ausgang/Boss), Kamera/Nebel, Ergebnisbildschirm | Jeder Seed erzeugt einen lösbaren Dungeon (automatisch geprüft); eine Mission lässt sich von Start bis Ziel spielen | M |
 | **4** | Beute, Inventar, Speichern | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
 | **5** | Rocinante-Hub | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
@@ -29,3 +29,15 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 Enthalten: Projekt-Setup, PWA-Grundgerüst, eine Spielfigur (Amos), die per Tippen läuft und Gegner angreift.
 Zusätzlich, weil dafür nötig oder sehr klein: Pfadfindung (A*), Wandkollision, Gegner-KI (verfolgen und schlagen), HUD mit Platzhaltern für die 3 Fähigkeiten (damit Touch-Layout und „Tipp auf HUD läuft nicht los“ früh feststehen), Tod und Neustart, Gegnerwellen in der Testarena.
 Bewusst **nicht** enthalten: funktionierende Fähigkeiten, Items, Dungeon-Generator, Speichern, weitere Klassen, Schwerelosigkeit, Audio.
+
+## Meilenstein 2: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitte 5, 6 und 10):
+- **Fähigkeiten-System** (`src/abilities`): Taste → Fähigkeit mit Abklingzeit; Amos: Rammbock, Standhaft, Gnadenloser Schlag. Tasten zeigen Symbol und Abklingzeit, Tipp auf Taste lässt die Figur nie laufen.
+- **Trank-Taste:** 3 Tränke pro Mission, heilt 40 %.
+- **Gegner:** Schläger (Nahkampf), Schütze (Fernkampf mit Projektilen, Sichtlinie, hält Abstand), Brecher (Elite, Flächenschlag). Jeder Angriff wird durch eine rote Gefahrenzone angekündigt; Ausweichen und Betäubung unterbrechen ihn.
+- **Erfahrung und Stufen:** Kurve bis Stufe 30, Werte wachsen pro Stufe; Stufe und Erfahrung bleiben über Neustarts erhalten (bis der Spielstand in Meilenstein 4 kommt).
+- **Testarena:** 5 Wellen, danach Wiederholung mit härteren Gegnern; Wellenzähler im HUD.
+
+Bewusst **nicht** enthalten (kommt später): Talentpunkte (Meilenstein 6), Items und Beute (4), weitere Klassen (6), Elite-Zusatzfähigkeiten, Audio.
+

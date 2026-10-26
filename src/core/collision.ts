@@ -93,3 +93,19 @@ export function hasClearLine(
   }
   return true;
 }
+
+/** Sichtlinie für Schüsse und Zielen: dünner Strahl, der nur Wände beachtet. */
+export function hasLineOfSight(grid: TileGrid, ax: number, ay: number, bx: number, by: number): boolean {
+  return hasClearLine(grid, ax, ay, bx, by, 1.5);
+}
+
+/** Länge des Strahls ab (x,y) in Richtung `angle`, bis er eine Wand trifft (höchstens `maxDistance`). */
+export function rayDistance(grid: TileGrid, x: number, y: number, angle: number, maxDistance: number): number {
+  const stepSize = 4;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  for (let d = 0; d < maxDistance; d += stepSize) {
+    if (circleHitsSolid(grid, x + dx * d, y + dy * d, 1.5)) return Math.max(0, d - stepSize);
+  }
+  return maxDistance;
+}

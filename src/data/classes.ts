@@ -1,6 +1,6 @@
 import type { ClassDef } from './types';
 
-/** Spielbare Klassen. Meilenstein 1 enthält nur Amos; Naomi, Bobbie und Holden folgen (siehe docs/MILESTONES.md). */
+/** Spielbare Klassen. Bisher nur Amos; Naomi, Bobbie und Holden folgen (siehe docs/MILESTONES.md). */
 export const CLASSES = {
   amos: {
     id: 'amos',
@@ -16,6 +16,8 @@ export const CLASSES = {
       attackRange: 14,
       attackCooldownMs: 550,
     },
+    growth: { hpPerLevel: 12, damagePerLevel: 0.06 },
+    abilities: ['rammbock', 'standhaft', 'gnadenloser-schlag'],
   },
 } as const satisfies Partial<Record<ClassDef['id'], ClassDef>>;
 
