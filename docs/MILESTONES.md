@@ -9,7 +9,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 | **2** | Kampfkern ✅ | 3 Fähigkeiten-Tasten (Amos) mit Abklingzeit, Fernkampf-Gegner mit Projektilen und Sichtlinie, Elite-Gegner, Angriffs-Ankündigung, Erfahrung und Stufenaufstieg, Trank-Taste | Ein Kampf mit 3 Gegnertypen macht Spaß und ist fair lesbar | M |
 | **3** | Dungeon-Generator ✅ | Seeded Räume-und-Gänge-Generator, Spawn-Tabellen, Truhen, Missionsziel (Ausgang/Boss), Kamera/Nebel, Ergebnisbildschirm | Jeder Seed erzeugt einen lösbaren Dungeon (automatisch geprüft); eine Mission lässt sich von Start bis Ziel spielen | M |
 | **4** | Beute, Inventar, Speichern ✅ | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
-| **5** | Rocinante-Hub | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
+| **5** | Rocinante-Hub ✅ | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
 | **6** | Klassen & Talente | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
 | **7** | Schwerelosigkeit | Bewegungsmodus mit Trägheit, markierte Zonen, Abprallen, Rückstoß, „Stabilisieren“, Gürtler-Boni | Übergang normal ↔ schwerelos ist verständlich und macht Spaß | M |
 | **8** | Akt 1: Ceres/Tycho | Missionen, 4 Gegnertypen, Gangboss, Dialogtexte, Schwierigkeitskurve, Platzhalter-Audio | Akt 1 ist von Anfang bis Boss durchspielbar (ca. 60–75 Min.) | L |
@@ -64,4 +64,17 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitte 9 und 12):
 - Tests: Item-Würfeln (Verteilungen, Herkunft, Skalierung), Inventar, Spielstand-Rundreise, Beschädigung, neuere Version.
 
 Bewusst **nicht** enthalten: Händler (Meilenstein 5), Klassen-spezifische Waffen, Verbessern/Zerlegen von Gegenständen, weitere legendäre Effekte, mehrere Spielstände.
+
+## Meilenstein 5: Umfang im Detail
+
+Umgesetzt (Details: GDD, Abschnitte 4, 11, 12):
+- **Titelseite** mit **3 Spielständen** (Spielstand-Karten mit Figur, Stufe, Credits, Missionen, Datum, Löschen mit Bestätigung) und **Klassenwahl** für neue Spiele (alle vier Figuren sichtbar, bisher nur Amos wählbar). Der Spielstand aus Meilenstein 4 wird in Platz 1 übernommen.
+- **Hub „Rocinante“** als begehbare Ebene: Missionskonsole, Waffenkammer (Rucksack/Ausrüstung), Händler, Spielstand-Terminal (zurück zur Titelseite); Besatzung (die drei übrigen Figuren) mit Platzhalter-Sprüchen. Tippen auf eine Station läuft hin und benutzt sie.
+- **Aufträge** an der Missionskonsole: drei Angebote (zwei normal, einer schwer: +35 % Leben, +20 % Schaden, bessere Beute, +50 % Credits), wechseln nach jeder abgeschlossenen Mission.
+- **Händler:** sechs Gegenstände (je Platz einer, dazu ein weiterer), Preis = 3 × Wert, wechselt nach jeder Mission, Käufe bleiben im Spielstand.
+- **Kreislauf:** Hub → Auftrag → Mission → Ergebnis/Tod → Hub. Die Testarena (`?mode=arena`) bleibt als Übungsmodus.
+- Gemeinsamer UI-Unterbau (`ui/PanelScene`, `ui/itemWidgets`) für Rucksack, Händler, Aufträge und Titel.
+- Tests: Hub-Karte (Stationen erreichbar), Aufträge, Händler und Kauf, Spielstand-Plätze und Übernahme.
+
+Bewusst **nicht** enthalten: Missionen mit Handlung und Akt-Auswahl (kommen mit den Akten, Meilensteine 8–10), Werkbank zum Verbessern, echte Dialoge der Besatzung (die Sprüche sind Platzhalter), Klassenwechsel innerhalb eines Spielstands.
 

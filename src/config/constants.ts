@@ -30,7 +30,11 @@ export const SCENE_KEYS = {
   boot: 'BootScene',
   mission: 'MissionScene',
   hud: 'HudScene',
+  title: 'TitleScene',
+  hub: 'HubScene',
   inventory: 'InventoryScene',
+  shop: 'ShopScene',
+  missionSelect: 'MissionSelectScene',
 } as const;
 
 export const REGISTRY_KEYS = {
@@ -44,6 +48,8 @@ export const REGISTRY_KEYS = {
  */
 export const GAME_EVENTS = {
   missionReady: 'roci:mission-ready',
+  /** Payload: Player. */
+  hubReady: 'roci:hub-ready',
   playerDied: 'roci:player-died',
   /** Payload: Wellennummer (1-basiert). */
   waveStarted: 'roci:wave-started',
@@ -64,6 +70,8 @@ export const MISSION_EVENTS = {
 
 /** Schlüssel des Spielstands (`Profile`) im Registry: Fortschritt, Credits, Gegenstände. */
 export const REGISTRY_PROFILE = 'profile';
+/** Schlüssel der Spielsitzung (`Session`): Spielstand-Plätze und Autospeichern. */
+export const REGISTRY_SESSION = 'session';
 
 export const CRIT_MULTIPLIER = 1.5;
 

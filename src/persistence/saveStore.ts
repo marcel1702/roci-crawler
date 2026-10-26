@@ -6,6 +6,7 @@ import type { ItemRules } from '../core/items';
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 export const SAVE_KEY = 'roci-crawler:save';
@@ -55,7 +56,7 @@ export class SaveStore {
   save(profile: Profile): boolean {
     if (!this.storage || this.blocked) return false;
     try {
-      this.storage.setItem(this.key, JSON.stringify(profile.toJSON()));
+      this.storage.setItem(this.key, JSON.stringify({ ...profile.toJSON(), savedAt: Date.now() }));
       return true;
     } catch {
       return false; // Speicher voll oder gesperrt: das Spiel läuft weiter, nur ohne Speichern.

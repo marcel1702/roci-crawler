@@ -24,6 +24,8 @@ export class TapControlSystem {
     private readonly isOverUi: (screenX: number, screenY: number) => boolean,
     /** True, wenn die Welt keine Befehle annehmen soll (Figur tot, Mission vorbei). */
     private readonly isLocked: () => boolean,
+    /** Optional: bekommt den Tipp (Weltkoordinaten) zuerst; true = behandelt (z. B. Station im Hub). */
+    private readonly handleTap?: (worldX: number, worldY: number) => boolean,
   ) {
     this.marker = scene.add.image(0, 0, TEXTURE_KEYS.moveMarker).setScale(TEXTURE_SCALE).setDepth(5).setAlpha(0);
 
@@ -39,6 +41,11 @@ export class TapControlSystem {
     if (this.isLocked() || this.activePointerId !== null || this.isOverUi(pointer.x, pointer.y)) return;
 
     const world = pointer.positionToCamera(this.scene.cameras.main) as Phaser.Math.Vector2;
+    if (this.handleTap?.(world.x, world.y)) {
+      this.dragMode = 'attack'; // Ziehen soll nichts nachführen
+      this.activePointerId = pointer.id;
+      return;
+    }
     const enemy = this.pickEnemy(world.x, world.y);
     if (enemy) {
       this.dragMode = 'attack';

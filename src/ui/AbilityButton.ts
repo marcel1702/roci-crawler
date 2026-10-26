@@ -29,6 +29,7 @@ export class AbilityButton {
   private icon: ButtonIcon | null = null;
   private lastKey = '';
   private flashUntil = 0;
+  private visible = true;
   private state: ButtonState = { cooldownFraction: 0, cooldownSeconds: 0, usable: true };
 
   constructor(
@@ -62,9 +63,14 @@ export class AbilityButton {
     this.redraw();
   }
 
-  /** Treffertest in Bildschirmkoordinaten; `pad` vergrößert die Fläche für ungenaue Finger. */
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    for (const object of [this.base, this.overlay, this.seconds, this.badge]) object.setVisible(visible);
+  }
+
+  /** Treffertest in Bildschirmkoordinaten; `pad` vergrößert die Fläche für ungenaue Finger. Verborgene Tasten treffen nie. */
   contains(px: number, py: number, pad = 0): boolean {
-    return Math.hypot(px - this.x, py - this.y) <= this.radius + pad;
+    return this.visible && Math.hypot(px - this.x, py - this.y) <= this.radius + pad;
   }
 
   /** Kurzes Aufleuchten als Rückmeldung für einen Tipp. */

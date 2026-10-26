@@ -1,14 +1,18 @@
 import Phaser from 'phaser';
-import { REGISTRY_PROFILE } from './config/constants';
+import { REGISTRY_SESSION } from './config/constants';
 import { COLORS } from './config/palette';
-import type { Profile } from './core/profile';
+import type { Session } from './persistence/session';
 import { currentPixelRatio, startHiDpiScaling, surfaceSize } from './platform/hidpi';
 import { BootScene } from './scenes/BootScene';
+import { HubScene } from './scenes/HubScene';
 import { HudScene } from './scenes/HudScene';
 import { InventoryScene } from './scenes/InventoryScene';
 import { MissionScene } from './scenes/MissionScene';
+import { MissionSelectScene } from './scenes/MissionSelectScene';
+import { ShopScene } from './scenes/ShopScene';
+import { TitleScene } from './scenes/TitleScene';
 
-export function createGame(container: HTMLElement, profile: Profile): Phaser.Game {
+export function createGame(container: HTMLElement, session: Session): Phaser.Game {
   const { width, height } = surfaceSize(container);
 
   const game = new Phaser.Game({
@@ -20,9 +24,10 @@ export function createGame(container: HTMLElement, profile: Profile): Phaser.Gam
     input: { activePointers: 3 },
     disableContextMenu: true,
     render: { antialias: true, powerPreference: 'high-performance' },
-    scene: [BootScene, MissionScene, HudScene, InventoryScene],
-    // Der Spielstand steht bereit, bevor die erste Szene startet.
-    callbacks: { preBoot: (g) => g.registry.set(REGISTRY_PROFILE, profile) },
+    // Reihenfolge = Zeichenreihenfolge: Welt unten, HUD darüber, Overlays ganz oben.
+    scene: [BootScene, TitleScene, HubScene, MissionScene, HudScene, InventoryScene, ShopScene, MissionSelectScene],
+    // Die Sitzung steht bereit, bevor die erste Szene startet.
+    callbacks: { preBoot: (g) => g.registry.set(REGISTRY_SESSION, session) },
   });
 
   startHiDpiScaling(game, container);

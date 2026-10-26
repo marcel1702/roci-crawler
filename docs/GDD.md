@@ -41,10 +41,11 @@ Mehrfingerbedienung: Laufen und Fähigkeiten gleichzeitig. Zusätzlich eine klei
 ## 4. Spielschleife
 
 ```
-Rocinante (Hub) → Mission wählen → Dungeon durchqueren, kämpfen, Beute sammeln
+Rocinante (Hub) → Auftrag wählen → Dungeon durchqueren, kämpfen, Beute sammeln
         ↑                                              ↓
    Ausrüsten, handeln  ←——————— Ergebnis, Erfahrung, Credits ———┘
 ```
+Nach Mission oder Tod geht es immer zurück in den Hub; der Spielstand wird dabei gespeichert.
 
 Jeder Akt besteht aus mehreren Missionen und endet mit einem Bosskampf; danach öffnet sich der nächste Akt.
 
@@ -160,8 +161,17 @@ Gegner werden mit der Spielerstufe etwas stärker (+6 % Leben, +4 % Schaden je S
 
 ## 11. Hub: Die Rocinante `[Vorgabe]`
 
-Stationen: **Missionskonsole** (Akt und Mission wählen) · **Waffenkammer** (Inventar, Ausrüstung, Talente) · **Händler** (kaufen/verkaufen, Bestand nach Herkunft) · **Messe** (Crew-Dialoge, Story).
-Die nicht gewählten Hauptfiguren besetzen Stationen der Crew.
+Umgesetzt in Meilenstein 5 `[Umgesetzt]`: Der Hub ist eine kleine begehbare Karte (Cockpit, Gang, Messe, Waffenkammer, Frachtraum). Die Figur läuft per Tippen; **Tippen auf eine Station** läuft hin und öffnet sie.
+
+| Station | Ort | Funktion |
+|---|---|---|
+| **Missionskonsole** | Cockpit | Drei Aufträge (Ort, Normal/Schwer); wechseln nach jeder abgeschlossenen Mission. Schwer: +35 % Leben, +20 % Schaden der Gegner, seltenere Beute (×1,8 auf selten und besser), +50 % Credits |
+| **Waffenkammer** | unten | Rucksack und Ausrüstung (wie in der Mission) |
+| **Händler** | Frachtraum | 6 Gegenstände (je Platz einer plus ein zufälliger), Preis = 3 × Wert, Angebot wechselt nach jeder Mission, gekaufte Teile bleiben weg |
+| **Spielstand-Terminal** | Frachtraum | Zurück zur Titelseite (anderen Spielstand laden) |
+| **Besatzung** | Messe | Die drei übrigen Figuren mit je zwei **Platzhalter-Sprüchen** (Texte sind vorläufig und noch nicht inhaltlich abgestimmt) |
+
+Aufträge zeigen Akt 1 (Ceres/Tycho); echte Akt-Wahl und Handlung folgen mit den Akten (Meilensteine 8–10). Tränke füllen sich zu jeder Mission wieder auf.
 
 ## 12. Speichern `[Vorgabe: localStorage/IndexedDB]`
 
@@ -173,7 +183,9 @@ Umgesetzt `[Umgesetzt, Meilenstein 4]`:
 - **Robust:** Unbrauchbare Gegenstände werden verworfen statt den ganzen Spielstand; beschädigte Daten werden vor dem Überschreiben als Sicherung abgelegt; ein Spielstand einer neueren Version wird nie überschrieben; fehlender oder voller Speicher bricht das Spiel nicht ab.
 - `navigator.storage.persist()` wird angefragt, damit Safari den Spielstand nicht räumt.
 - `?reset` an der URL beginnt mit einem frischen Spielstand (zum Testen).
-- Noch offen `[Vorschlag: 3 Spielstände]`: mehrere Spielstände und Klassenwahl kommen mit dem Hub (Meilenstein 5).
+- **3 Spielstände** `[Umgesetzt, Meilenstein 5]`: Titelseite mit Karten, Löschen mit Bestätigung, zuletzt gespielter Platz hervorgehoben. Der Spielstand aus Meilenstein 4 (ein Eintrag) wird in Platz 1 übernommen.
+- **Eine Klasse pro Spielstand** wird beim Beginn eines neuen Spiels gewählt `[Umgesetzt als Vorschlag, noch zu bestätigen, siehe Frage 1]`; für eine andere Figur beginnt man ein neues Spiel in einem anderen Platz.
+- Abkürzungen zum Testen: `?slot=2` (Platz laden/beginnen und direkt in den Hub), `?seed=…`/`?mode=arena` (direkt in eine Mission), `?reset` (Platz 1 neu).
 
 ## 13. Nicht-Ziele
 
@@ -181,7 +193,7 @@ Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwisc
 
 ## 14. Offene Fragen (bitte vor dem jeweiligen Meilenstein klären)
 
-1. **Eine Klasse pro Spielstand** oder im Hub wechselbar? (Meilenstein 5/6)
+1. **Eine Klasse pro Spielstand** (so umgesetzt) oder im Hub wechselbar? (Meilenstein 6)
 2. **Holdens Crew-Rufe** als Support-Mechanik: einverstanden? (Meilenstein 6)
 3. **Schwerelosigkeit:** direkte Steuerung mit „Stabilisieren“-Taste (Vorschlag) oder Autopilot, der selbst abbremst? (Meilenstein 7)
 4. **Gegner und Bosse:** eigene Figuren im Universum (Vorschlag) oder bekannte Figuren aus Büchern/Serie? (Meilenstein 8)

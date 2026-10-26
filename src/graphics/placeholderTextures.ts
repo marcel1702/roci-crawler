@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config/palette';
 import { actorTextureKey, TEXTURE_KEYS, TEXTURE_RES, TILE_SIZE } from '../config/constants';
-import { CLASSES } from '../data/classes';
+import { CLASSES, CLASS_LIST } from '../data/classes';
 import { ENEMIES } from '../data/enemies';
 
 /**
@@ -16,7 +16,8 @@ export function createPlaceholderTextures(scene: Phaser.Scene): void {
 
   createProjectile(scene);
 
-  for (const def of Object.values(CLASSES)) createActor(scene, def.id, def.color, def.stats.radius, false);
+  // Alle vier Figuren (für Auswahl und Besatzung im Hub); der Radius entspricht dem spielbaren Amos.
+  for (const info of CLASS_LIST) createActor(scene, info.id, info.color, CLASSES.amos.stats.radius, false);
   for (const def of Object.values(ENEMIES)) {
     createActor(scene, def.id, def.color, def.stats.radius, 'elite' in def && def.elite === true);
   }

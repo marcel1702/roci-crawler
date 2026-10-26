@@ -1,6 +1,11 @@
 import type { Rarity } from '../core/items';
 import type { LootSource } from './types';
 
+/** Hebt die Gewichte seltener Beute (selten und besser) um `factor`; 1 ändert nichts. */
+export function boostedWeights(weights: Record<Rarity, number>, factor: number): Record<Rarity, number> {
+  return { ...weights, rare: weights.rare * factor, epic: weights.epic * factor, legendary: weights.legendary * factor };
+}
+
 /** Relative Gewichte der Seltenheiten je Beutequelle. */
 export const RARITY_WEIGHTS: Record<LootSource, Record<Rarity, number>> = {
   enemy: { common: 70, uncommon: 22, rare: 7, epic: 0.9, legendary: 0.1 },

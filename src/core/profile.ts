@@ -15,6 +15,10 @@ export interface SaveData {
   xp: number;
   credits: number;
   missionsCompleted: number;
+  /** Kennungen der Gegenstände, die im aktuellen Angebot des Händlers schon gekauft wurden. */
+  shopBought?: string[];
+  /** Zeitpunkt des letzten Speicherns (ms seit 1970), nur zur Anzeige. */
+  savedAt?: number;
   bag: Item[];
   equipped: Record<string, Item | null>;
 }
@@ -29,6 +33,7 @@ export class Profile {
   readonly inventory: Inventory;
   classId: string;
   missionsCompleted = 0;
+  readonly shopBought = new Set<string>();
   /** Wird bei jeder Änderung aufgerufen (Speichern wird davon entkoppelt). */
   onChange: (() => void) | null = null;
 
@@ -57,6 +62,7 @@ export class Profile {
       xp: this.progression.xp,
       credits: this.wallet.credits,
       missionsCompleted: this.missionsCompleted,
+      shopBought: [...this.shopBought],
       bag: [...this.inventory.bag],
       equipped: { ...this.inventory.equipped },
     };
@@ -84,6 +90,9 @@ export function parseProfile(raw: unknown, rules: ItemRules): ParseResult {
   const wallet = new Wallet(Math.max(0, Math.floor(finiteOr(raw.credits, 0))));
   const profile = new Profile(rules, typeof raw.classId === 'string' ? raw.classId : 'amos', progression, wallet);
   profile.missionsCompleted = Math.max(0, Math.floor(finiteOr(raw.missionsCompleted, 0)));
+  if (Array.isArray(raw.shopBought)) {
+    for (const id of raw.shopBought) if (typeof id === 'string') profile.shopBought.add(id);
+  }
 
   const seen = new Set<string>();
   const accept = (value: unknown): Item | null => {

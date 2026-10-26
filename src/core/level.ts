@@ -10,9 +10,15 @@ export interface ParsedLevel {
   grid: TileGrid;
   playerStart: Vec2;
   enemySpawns: Vec2[];
+  /** Mitten der Kacheln mit zusätzlichen Markierungszeichen (siehe `markerChars`), je Zeichen. */
+  markers: Record<string, Vec2[]>;
 }
 
-export function parseLevel(layout: LevelLayout, tileSize: number): ParsedLevel {
+/**
+ * Liest eine ASCII-Karte. `markerChars` nennt weitere erlaubte Zeichen (z. B. Stationen im Hub): Sie zählen als
+ * begehbarer Boden, ihre Position wird in `markers` gesammelt.
+ */
+export function parseLevel(layout: LevelLayout, tileSize: number, markerChars = ''): ParsedLevel {
   const { rows } = layout;
   const cols = rows[0]?.length ?? 0;
   if (rows.length === 0 || cols === 0) throw new Error('Level ist leer');
@@ -20,6 +26,7 @@ export function parseLevel(layout: LevelLayout, tileSize: number): ParsedLevel {
   const cells = new Uint8Array(cols * rows.length);
   let playerStart: Vec2 | null = null;
   const enemySpawns: Vec2[] = [];
+  const markers: Record<string, Vec2[]> = {};
 
   rows.forEach((line, row) => {
     if (line.length !== cols) {
@@ -40,11 +47,14 @@ export function parseLevel(layout: LevelLayout, tileSize: number): ParsedLevel {
           enemySpawns.push(center);
           break;
         default:
-          throw new Error(`Unbekanntes Level-Zeichen "${char}" in Zeile ${row}, Spalte ${col}`);
+          if (!markerChars.includes(char)) {
+            throw new Error(`Unbekanntes Level-Zeichen "${char}" in Zeile ${row}, Spalte ${col}`);
+          }
+          (markers[char] ??= []).push(center);
       }
     });
   });
 
   if (!playerStart) throw new Error('Level hat keinen Spielerstart (@)');
-  return { grid: new TileGrid(cols, rows.length, tileSize, cells), playerStart, enemySpawns };
+  return { grid: new TileGrid(cols, rows.length, tileSize, cells), playerStart, enemySpawns, markers };
 }

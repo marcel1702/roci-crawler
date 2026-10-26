@@ -26,6 +26,9 @@ export class HudScene extends Phaser.Scene {
   private u = 1;
   private player: Player | null = null;
   private mission: MissionScene | null = null;
+  /** Wo die Figur gerade ist: im Hub (nur Leisten, Rucksack, Credits) oder in einer Mission (alle Tasten). */
+  private world: 'hub' | 'mission' = 'mission';
+  private creditsText!: Phaser.GameObjects.Text;
 
   private playerBar!: ResourceBar;
   private xpBar!: ResourceBar;
@@ -82,6 +85,7 @@ export class HudScene extends Phaser.Scene {
     this.targetName.setVisible(false);
 
     this.waveText = this.makeText({ fontStyle: 'bold', color: '#7d8aa8' }).setOrigin(1, 0).setVisible(false);
+    this.creditsText = this.makeText({ fontStyle: 'bold', color: COLORS.credits }).setOrigin(1, 0).setVisible(false);
     this.objectiveText = this.makeText({ fontStyle: 'bold', color: '#dbe4f5', align: 'right' }).setOrigin(1, 0).setVisible(false);
     this.minimapPanel = this.add.graphics();
     this.minimapMarkers = this.add.graphics();
@@ -112,6 +116,7 @@ export class HudScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-I', this.openInventory, this);
     const on = this.game.events;
     on.on(GAME_EVENTS.missionReady, this.onMissionReady, this);
+    on.on(GAME_EVENTS.hubReady, this.onHubReady, this);
     on.on(GAME_EVENTS.waveStarted, this.onWaveStarted, this);
     on.on(GAME_EVENTS.waveCleared, this.onWaveCleared, this);
     on.on(GAME_EVENTS.playerLevelUp, this.onLevelUp, this);
@@ -123,6 +128,7 @@ export class HudScene extends Phaser.Scene {
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
       this.input.keyboard?.off('keydown-I', this.openInventory, this);
       on.off(GAME_EVENTS.missionReady, this.onMissionReady, this);
+      on.off(GAME_EVENTS.hubReady, this.onHubReady, this);
       on.off(GAME_EVENTS.waveStarted, this.onWaveStarted, this);
       on.off(GAME_EVENTS.waveCleared, this.onWaveCleared, this);
       on.off(GAME_EVENTS.playerLevelUp, this.onLevelUp, this);
@@ -132,8 +138,11 @@ export class HudScene extends Phaser.Scene {
     });
 
     // Beim ersten Start läuft MissionScene.create() vor diesem create(): das Ereignis wäre verpasst.
+    const hub = this.scene.get(SCENE_KEYS.hub) as unknown as { player?: Player };
     const mission = this.scene.get(SCENE_KEYS.mission) as MissionScene;
-    if (mission.sys.isActive() && mission.player) {
+    if (this.scene.isActive(SCENE_KEYS.hub) && hub.player) {
+      this.onHubReady(hub.player);
+    } else if (mission.sys.isActive() && mission.player) {
       this.onMissionReady(mission.player);
       if (mission.waveNumber > 0) this.onWaveStarted(mission.waveNumber);
     }
@@ -155,6 +164,13 @@ export class HudScene extends Phaser.Scene {
     if (nameText !== this.lastNameText) {
       this.lastNameText = nameText;
       this.playerName.setText(nameText);
+    }
+
+    if (this.world === 'hub') {
+      this.creditsText.setText(t('inv.credits', { amount: player.profile.wallet.credits }));
+      this.targetBar.setVisible(false);
+      this.targetName.setVisible(false);
+      return;
     }
 
     player.abilities.forEach((slot, i) => {
@@ -183,12 +199,13 @@ export class HudScene extends Phaser.Scene {
   /** True, wenn ein Bildschirmpunkt auf einem Bedienelement liegt (Tipp darf dann nicht laufen lassen). */
   isOverUi(screenX: number, screenY: number): boolean {
     const pad = 10 * this.u;
-    return [...this.abilityButtons, this.potionButton, this.bagButton].some((button) => button.contains(screenX, screenY, pad));
+    const buttons = this.world === 'hub' ? [this.bagButton] : [...this.abilityButtons, this.potionButton, this.bagButton];
+    return buttons.some((button) => button.contains(screenX, screenY, pad));
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     const player = this.player;
-    if (!player || this.locked || this.inventoryOpen()) return;
+    if (!player || this.locked || this.overlayOpen()) return;
     const pad = 6 * this.u;
 
     if (this.bagButton.contains(pointer.x, pointer.y, pad)) {
@@ -196,6 +213,7 @@ export class HudScene extends Phaser.Scene {
       this.openInventory();
       return;
     }
+    if (this.world === 'hub') return;
     const index = this.abilityButtons.findIndex((button) => button.contains(pointer.x, pointer.y, pad));
     if (index >= 0) {
       this.abilityButtons[index]?.press();
@@ -206,20 +224,49 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
-  private inventoryOpen(): boolean {
-    return this.scene.isActive(SCENE_KEYS.inventory);
+  /** True, solange Rucksack, Händler oder Auftragswahl offen sind: dann gehören alle Tipps dem Fenster. */
+  private overlayOpen(): boolean {
+    return [SCENE_KEYS.inventory, SCENE_KEYS.shop, SCENE_KEYS.missionSelect].some((key) => this.scene.isActive(key));
   }
 
-  /** Öffnet Rucksack und Ausrüstung; die Mission pausiert, solange er offen ist. */
+  /** Öffnet Rucksack und Ausrüstung; die Welt (Hub oder Mission) pausiert, solange er offen ist. */
   private openInventory(): void {
-    if (!this.player || this.locked || this.inventoryOpen()) return;
-    this.scene.pause(SCENE_KEYS.mission);
-    this.scene.launch(SCENE_KEYS.inventory);
+    if (!this.player || this.locked || this.overlayOpen()) return;
+    const parent = this.world === 'hub' ? SCENE_KEYS.hub : SCENE_KEYS.mission;
+    this.scene.pause(parent);
+    this.scene.launch(SCENE_KEYS.inventory, { parent });
+  }
+
+  private setCombatUi(visible: boolean): void {
+    for (const button of [...this.abilityButtons, this.potionButton]) button.setVisible(visible);
+  }
+
+  private onHubReady(player: Player): void {
+    this.player = player;
+    this.mission = null;
+    this.world = 'hub';
+    this.locked = false;
+    this.shownTargetUntil = 0;
+    this.setOverlayVisible(false);
+    this.banner.setVisible(false);
+    this.setCombatUi(false);
+    this.waveText.setVisible(false);
+    this.objectiveText.setVisible(false);
+    this.creditsText.setVisible(true);
+    this.hint.setText(t('hub.hint')).setAlpha(1).setVisible(true);
+    this.tweens.killTweensOf(this.hint);
+    this.tweens.add({ targets: this.hint, alpha: 0, delay: HINT_VISIBLE_MS, duration: 800 });
+    this.rebuildMinimap();
+    this.layout();
   }
 
   private onMissionReady(player: Player): void {
     this.player = player;
     this.mission = this.scene.get(SCENE_KEYS.mission) as MissionScene;
+    this.world = 'mission';
+    this.setCombatUi(true);
+    this.creditsText.setVisible(false);
+    this.hint.setText(t('hud.hint.controls'));
     this.locked = false;
     this.shownTargetUntil = 0;
     this.setOverlayVisible(false);
@@ -257,7 +304,7 @@ export class HudScene extends Phaser.Scene {
     this.overlayTitle.setText(t('hud.death.title')).setColor('#ff8a8a');
     this.overlayLabels.setText('');
     this.overlayValues.setText('');
-    this.overlayHint.setText(t('hud.death.retry'));
+    this.overlayHint.setText(this.mission?.config.kind === 'arena' ? t('hud.death.retry') : t('hud.death.hub'));
     this.showOverlay();
   }
 
@@ -390,6 +437,7 @@ export class HudScene extends Phaser.Scene {
     // Rechts oben: Aufgabe/Welle und Minikarte. Auf schmalen Bildschirmen bleibt links Platz für die Leisten.
     const rightColCss = clamp(width / u - barWcss - 56, 110, 220);
     this.waveText.setFontSize(Math.round(13 * u)).setPosition(right, top);
+    this.creditsText.setFontSize(Math.round(14 * u)).setPosition(right, top);
     this.objectiveText
       .setFontSize(Math.round(12 * u))
       .setWordWrapWidth(rightColCss * u)

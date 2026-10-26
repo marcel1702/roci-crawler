@@ -38,10 +38,14 @@ src/
   abilities/   Wirkung der Klassenfähigkeiten (Phaser-abhängig), Registry `ABILITIES` je `AbilityId`.
   entities/    Phaser-Objekte mit Zustand: Actor (Basis), Player, Enemy, Chest, ExitPortal, LootDrop.
   systems/     Eigenständige Spielsysteme pro Szene: Eingabe (Tippen), Kampf, Geschosse, Kamera, Trennung, Nebel.
-  scenes/      Dünn halten: BootScene, MissionScene (Spielwelt), HudScene (Oberfläche darüber), InventoryScene (Overlay, pausiert die Mission).
+  scenes/      Dünn halten. Welten: HubScene, MissionScene. HudScene liegt darüber (Hub- oder Missionsmodus).
+               Overlays (pausieren ihre Welt, Daten `{ parent }`): InventoryScene, ShopScene, MissionSelectScene.
+               TitleScene (Spielstände, Klassenwahl), BootScene (Texturen, Start/Abkürzungen).
   ui/          Wiederverwendbare HUD-Bausteine.
   graphics/    Erzeugung der Platzhalter-Texturen.
-  persistence/ Spielstand im Browser-Speicher (SaveStore) und Autospeichern; kennt nur `core`.
+  persistence/ Spielstand im Browser-Speicher: SaveStore (ein Platz), Session (3 Plätze, aktiver Spielstand,
+               Autospeichern); kennt nur `core`.
+  ui/          Wiederverwendbare Oberflächen: PanelScene (Basis für Overlay-Szenen), itemWidgets, Tasten, Balken.
   platform/    Gerätenahes: HiDPI-Skalierung, Safe-Area.
   pwa/         Service-Worker-Registrierung und Update-Hinweis.
   i18n/        t(key), Sprachtabellen (de.ts ist die Referenz).
@@ -58,6 +62,8 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 - **Gegnerangriffe** haben immer eine Ankündigung (`windupMs` + rote Gefahrenzone); neue Gegner folgen dieser Regel (Lesbarkeit, siehe GDD).
 - **Neue Fähigkeit:** Kennung in `AbilityId` (`data/types.ts`), Wirkung in `src/abilities`, Text-Schlüssel `ability.<id>.name`, Eintrag in `ABILITIES`, Belegung in `data/classes.ts`.
 - **Schaden:** immer über `CombatSystem.dealDamage` (zeigt Zahlen, meldet Todesfälle über `MISSION_EVENTS.actorKilled`), nie direkt `takeDamage`.
+- **Neue Overlay-Fenster** erben von `ui/PanelScene` (Zeichnen in `render()`, Tipps über `hits`), öffnen mit `scene.pause(); scene.launch(key, { parent })` und setzen beim Schließen die Elternszene fort. Das HUD sperrt seine Tasten, solange ein Overlay offen ist (`overlayOpen()`).
+- **Hub:** Stationen sind `Station`-Entities; `HubScene.onWorldTap` bekommt Tipps vor der normalen Bewegung (Hook im `TapControlSystem`). Neue Station: Marker in `data/levels/hub.ts` und `HUB_MARKERS`, Art in `StationKind`, Text-Schlüssel `hub.station.<art>`, Aktion in `HubScene.open`.
 - **Missionen** laufen über `MissionConfig` (`dungeon` mit Seed oder `arena`); `MissionScene` startet sich bei Tod/Missionsende mit neuer Konfiguration neu. Neue Generator-Parameter oder Regeln gehören in `core/dungeon.ts`/`core/encounters.ts` und müssen den Seed-Test (`tests/core/dungeon.test.ts`) bestehen.
 - **Welt-Ebenen (depth):** Karte 0, Truhe/Ausgang 7–8, Akteure 10, Geschosse 40, Effekte 45–50, **Nebel 60**, schwebende Zahlen 100. Alles unter 60 verschwindet im Nebel; das HUD ist eine eigene Szene.
 - **Fortschritt** (`Progression`) und **Credits** (`Wallet`) leben im `game.registry` und überdauert Missionsneustarts; Meilenstein 4 ersetzt das durch den Spielstand.
@@ -79,7 +85,7 @@ Szenen sprechen untereinander über Ereignisse auf `game.events` (`GAME_EVENTS` 
 ## Tests & Prüfen
 
 - Neue Logik in `src/core` bekommt Vitest-Tests in `tests/core`.
-- URL-Parameter: `?seed=<zahl>` (feste Karte), `?mode=arena` (Testarena), `?reset` (frischer Spielstand). Der Seed steht im Dev-Modus unten links im HUD.
+- URL-Parameter: `?seed=<zahl>` (feste Karte), `?mode=arena` (Testarena), `?slot=<1-3>` (Spielstand laden oder neu beginnen, direkt in den Hub), `?reset` (Platz 1 neu). Ohne Parameter startet die Titelseite. Der Seed steht im Dev-Modus unten links im HUD.
 - Dev-Server stellt `window.__roci` (das Phaser-Spiel) bereit: für Konsole und automatisierte Browser-Tests. Nützlich: `scene.getScene('MissionScene').spawnEnemy('gunner', x, y)`, `.player.useAbility(i)`, `.player.gainXp(n)`.
 - Beim Prüfen im Headless-Browser beachten: Phaser deckelt `delta` in den ersten ~120 Frames nach dem Start auf einen Frame. Vor Bewegungstests ca. 5 s warten.
 - Vor jeder Übergabe: `npm run check` und `npm run build`.

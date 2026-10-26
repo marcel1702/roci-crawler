@@ -15,6 +15,8 @@ import {
   TILE_SIZE,
 } from '../config/constants';
 import { COLORS } from '../config/palette';
+import { DIFFICULTY_RULES } from '../core/contracts';
+import type { Difficulty } from '../core/contracts';
 import { generateDungeon } from '../core/dungeon';
 import { planMission } from '../core/encounters';
 import type { TileGrid } from '../core/grid';
@@ -29,13 +31,13 @@ import { ENEMIES } from '../data/enemies';
 import type { EnemyId } from '../data/enemies';
 import { ITEM_RULES } from '../data/items';
 import { TEST_ARENA, TEST_ARENA_WAVES } from '../data/levels/testArena';
-import { DROP_CHANCE, RARITY_WEIGHTS } from '../data/loot';
+import { DROP_CHANCE, RARITY_WEIGHTS, boostedWeights } from '../data/loot';
 import { ACT1_SPAWNS } from '../data/spawnTables';
 import type { LootSource } from '../data/types';
 import type { Actor, Team } from '../entities/Actor';
 import { Chest } from '../entities/Chest';
 import { Enemy } from '../entities/Enemy';
-import type { Difficulty } from '../entities/Enemy';
+import type { Difficulty as EnemyDifficulty } from '../entities/Enemy';
 import { ExitPortal } from '../entities/ExitPortal';
 import { LootDrop } from '../entities/LootDrop';
 import { Player } from '../entities/Player';
@@ -56,7 +58,7 @@ const NEXT_WAVE_DELAY_MS = 3000;
 const MIN_SPAWN_DISTANCE = 170;
 
 /** `dungeon`: zufällige Mission mit Ausgang; `arena`: Testarena mit endlosen Gegnerwellen (zum Ausprobieren). */
-export type MissionConfig = { kind: 'dungeon'; seed: number } | { kind: 'arena' };
+export type MissionConfig = { kind: 'dungeon'; seed: number; difficulty?: Difficulty } | { kind: 'arena' };
 
 export interface MissionStats {
   timeMs: number;
@@ -156,6 +158,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
       this.events.off(MISSION_EVENTS.actorKilled, this.onActorKilled, this);
       this.game.events.off(GAME_EVENTS.restartRequested, this.restart, this);
     });
+    if (!this.scene.isActive(SCENE_KEYS.hud)) this.scene.launch(SCENE_KEYS.hud);
     this.game.events.emit(GAME_EVENTS.missionReady, this.player);
   }
 
@@ -181,7 +184,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     else this.updateArena();
   }
 
-  spawnEnemy(id: EnemyId, x: number, y: number, difficulty?: Difficulty): Enemy {
+  spawnEnemy(id: EnemyId, x: number, y: number, difficulty?: EnemyDifficulty): Enemy {
     const enemy = new Enemy(this, this, x, y, ENEMIES[id], difficulty);
     this.enemies.push(enemy);
     return enemy;
@@ -220,7 +223,11 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   /** Legt Gegner, Truhen und Ausgang an, sobald die Welt steht. */
   private spawnPending(): void {
     const steps = this.player.progression.level - 1;
-    const difficulty = { hp: 1 + LEVEL_SCALING.hpPerLevel * steps, damage: 1 + LEVEL_SCALING.damagePerLevel * steps };
+    const rules = this.difficultyRules();
+    const difficulty = {
+      hp: (1 + LEVEL_SCALING.hpPerLevel * steps) * rules.hp,
+      damage: (1 + LEVEL_SCALING.damagePerLevel * steps) * rules.damage,
+    };
     for (const e of this.pendingEnemies) {
       const enemy = this.spawnEnemy(e.id, e.x, e.y, difficulty);
       if (e.guardian) this.guardians.add(enemy);
@@ -276,7 +283,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
   private openChest(chest: Chest): void {
     chest.markOpened();
     this.stats.chestsOpened++;
-    const credits = this.rng.int(CHEST.creditsMin, CHEST.creditsMax);
+    const credits = Math.round(this.rng.int(CHEST.creditsMin, CHEST.creditsMax) * this.difficultyRules().credits);
     this.profile().wallet.add(credits);
     this.stats.credits += credits;
     this.dropLoot('chest', chest.x, chest.y);
@@ -344,7 +351,11 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     return team === 'player' ? [this.player] : this.enemies;
   }
 
-  /** Spielstand (Fortschritt, Credits, Gegenstände); wird beim Start in `main.ts` geladen. */
+  private difficultyRules(): (typeof DIFFICULTY_RULES)[Difficulty] {
+    return DIFFICULTY_RULES[this.config.kind === 'dungeon' ? (this.config.difficulty ?? 'normal') : 'normal'];
+  }
+
+  /** Spielstand (Fortschritt, Credits, Gegenstände); wird von der Titelseite oder dem Start geladen. */
   private profile(): Profile {
     let profile = this.registry.get(REGISTRY_PROFILE) as Profile | undefined;
     if (!profile) {
@@ -359,7 +370,7 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     if (!this.rng.chance(DROP_CHANCE[source])) return;
     const item = rollItem(this.rng, ITEM_RULES, {
       itemLevel: this.player.progression.level,
-      rarityWeights: RARITY_WEIGHTS[source],
+      rarityWeights: boostedWeights(RARITY_WEIGHTS[source], this.difficultyRules().loot),
     });
     const offset = LootDrop.randomOffset(this.rng);
     const drop = new LootDrop(this, x + offset.x, y + offset.y, item);
@@ -397,9 +408,10 @@ export class MissionScene extends Phaser.Scene implements WorldContext {
     this.combat.floatText(victim.x, victim.y - victim.radius - 18, t('hud.xp', { amount: victim.def.xp }), COLORS.xpText, 12);
   }
 
-  /** Neustart nach Tod oder Missionsende: Dungeon-Missionen bekommen einen neuen Seed. */
+  /** Nach Tod oder Missionsende: Dungeon-Missionen kehren in den Hub zurück, die Testarena startet neu. */
   private restart(): void {
-    this.scene.restart(this.config.kind === 'dungeon' ? { kind: 'dungeon', seed: randomSeed() } : this.config);
+    if (this.config.kind === 'dungeon') this.scene.start(SCENE_KEYS.hub);
+    else this.scene.restart(this.config);
   }
 }
 
