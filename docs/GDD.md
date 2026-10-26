@@ -131,6 +131,6 @@ Mehrspieler, Online-Konten, Monetarisierung, 3D, Sprachausgabe, aufwendige Zwisc
 2. **Holdens Crew-Rufe** als Support-Mechanik: einverstanden? (Meilenstein 6)
 3. **Schwerelosigkeit:** direkte Steuerung mit „Stabilisieren“-Taste (Vorschlag) oder Autopilot, der selbst abbremst? (Meilenstein 7)
 4. **Gegner und Bosse:** eigene Figuren im Universum (Vorschlag) oder bekannte Figuren aus Büchern/Serie? (Meilenstein 8)
-5. **Hosting für den Tablet-Test mit Installation** (benötigt HTTPS): GitHub Pages, Tunnel oder lokales Zertifikat? Siehe README.
+5. ~~Hosting für den Tablet-Test~~ `[Entschieden]` GitHub Pages (siehe README).
 6. **Titel:** „Roci Crawler“ ist ein Arbeitstitel.
 7. **Audio:** ab wann Platzhalter-Effekte und Musik? (Vorschlag: ab Meilenstein 8)

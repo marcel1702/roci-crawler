@@ -20,7 +20,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 ## Querschnittsthemen (laufend)
 
 - **Tests:** Spiellogik in `src/core` ist per Vitest abgedeckt. Ab Meilenstein 3 zusätzlich ein Browser-Rauchtest (Playwright) für Start, Laufen, Angreifen.
-- **Hosting:** Sobald ein HTTPS-Ziel feststeht (siehe GDD, Frage 5), Deploy-Workflow ergänzen.
+- **Hosting:** GitHub Pages über `.github/workflows/pages.yml` (Prüfen bei jedem Push, Deploy vom Default-Branch).
 - **Leistung:** Zielwert 60 fps auf einem mittleren Tablet; Phaser-Chunk bleibt getrennt (Cache-freundlich).
 - **Dokumente pflegen:** Änderungen am Design landen im GDD, Änderungen an Architektur oder Regeln in `CLAUDE.md`.
 

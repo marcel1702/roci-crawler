@@ -34,8 +34,18 @@ npm run build      # erzeugt dist/ inkl. Service Worker und Manifest
 npm run preview    # http://localhost:4173, hier lässt sich Offline-Betrieb prüfen
 ```
 
-Für die Installation auf dem Tablet braucht `dist/` einen HTTPS-Host, z. B. GitHub Pages (`VITE_BASE=/roci-crawler/ npm run build`
-für den Unterpfad), ein Tunnel-Dienst oder ein lokales Zertifikat. Welche Variante gewünscht ist, ist im GDD als offene Frage vermerkt.
+### GitHub Pages (HTTPS, für Installation auf dem Tablet)
+
+`.github/workflows/pages.yml` prüft jeden Push (Typen, Tests, Build) und veröffentlicht Pushes auf den Default-Branch
+unter `https://<benutzer>.github.io/roci-crawler/`. Einmalig einrichten:
+
+1. Im Repository **Settings → Pages → Build and deployment → Source: „GitHub Actions“** wählen.
+2. Einen Push auf den Default-Branch machen oder unter **Actions → „Prüfen & GitHub Pages“ → Run workflow** starten.
+3. Die URL auf dem Tablet öffnen, einmal laden (danach läuft das Spiel offline) und „Zum Homescreen hinzufügen“ wählen.
+
+Hinweise: GitHub Pages aus einem **privaten** Repository gibt es nur mit einem kostenpflichtigen Plan (Pro/Team), und die veröffentlichte Seite
+ist dann trotzdem öffentlich per URL erreichbar. Wer das nicht möchte, kann `dist/` auch auf einen anderen HTTPS-Host legen
+(`VITE_BASE` setzen, wenn er einen Unterpfad nutzt).
 
 ## Skripte
 
