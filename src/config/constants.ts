@@ -49,6 +49,10 @@ export const GAME_EVENTS = {
   waveCleared: 'roci:wave-cleared',
   /** Payload: erreichte Stufe. */
   playerLevelUp: 'roci:player-level-up',
+  /** Payload: Text-Schlüssel der aktuellen Aufgabe. */
+  objectiveChanged: 'roci:objective-changed',
+  /** Payload: MissionStats. */
+  missionCompleted: 'roci:mission-completed',
   restartRequested: 'roci:restart-requested',
 } as const;
 
@@ -60,8 +64,13 @@ export const MISSION_EVENTS = {
 /** Schlüssel der Werte, die über Szenenneustarts hinweg leben (später: Spielstand). */
 export const REGISTRY_PROGRESSION = 'progression';
 
+/** Schlüssel für die Währung der Spielfigur im Registry (später: Spielstand). */
+export const REGISTRY_WALLET = 'wallet';
+
 export const POTION = {
   charges: 3,
+  /** So viele Tränke kann die Figur höchstens tragen (Truhen füllen auf). */
+  maxCarry: 5,
   cooldownMs: 4000,
   /** Anteil der maximalen Lebenspunkte, der geheilt wird. */
   healFraction: 0.4,
@@ -78,3 +87,21 @@ export const TEXTURE_KEYS = {
 export function actorTextureKey(id: string): string {
   return `actor-${id}`;
 }
+
+export const FOG = {
+  /** Sichtweite der Figur in Kacheln. */
+  radiusTiles: 8,
+  /** Die letzten Kacheln vor dem Sichtrand werden weich ausgeblendet. */
+  fadeTiles: 3,
+  /** Deckkraft (0..255) bereits entdeckter, aber gerade nicht sichtbarer Bereiche. */
+  rememberedAlpha: 150,
+} as const;
+
+export const CHEST = {
+  openRadius: 26,
+  creditsMin: 40,
+  creditsMax: 90,
+  potionChance: 0.3,
+} as const;
+
+export const EXIT_RADIUS = 30;

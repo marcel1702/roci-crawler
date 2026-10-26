@@ -7,7 +7,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 |---|---|---|---|---|
 | **1** | **Fundament** ✅ | Vite + TypeScript + Phaser 3, PWA (offline, installierbar), Dev-Server im WLAN, Testarena, Spielfigur (Amos) mit Tippen-zum-Laufen, Pfadfindung, Gegner mit einfacher KI, Nahkampf, HUD-Grundlayout, Hoch- und Querformat | Auf dem Tablet läuft die Figur per Tippen, greift Gegner an, stirbt und startet neu; die gebaute App startet offline | M |
 | **2** | Kampfkern ✅ | 3 Fähigkeiten-Tasten (Amos) mit Abklingzeit, Fernkampf-Gegner mit Projektilen und Sichtlinie, Elite-Gegner, Angriffs-Ankündigung, Erfahrung und Stufenaufstieg, Trank-Taste | Ein Kampf mit 3 Gegnertypen macht Spaß und ist fair lesbar | M |
-| **3** | Dungeon-Generator | Seeded Räume-und-Gänge-Generator, Spawn-Tabellen, Truhen, Missionsziel (Ausgang/Boss), Kamera/Nebel, Ergebnisbildschirm | Jeder Seed erzeugt einen lösbaren Dungeon (automatisch geprüft); eine Mission lässt sich von Start bis Ziel spielen | M |
+| **3** | Dungeon-Generator ✅ | Seeded Räume-und-Gänge-Generator, Spawn-Tabellen, Truhen, Missionsziel (Ausgang/Boss), Kamera/Nebel, Ergebnisbildschirm | Jeder Seed erzeugt einen lösbaren Dungeon (automatisch geprüft); eine Mission lässt sich von Start bis Ziel spielen | M |
 | **4** | Beute, Inventar, Speichern | Item-Modell, 5 Seltenheiten, Herkunft Erde/Mars/Gürtel mit Boni, Drops, touchfreundliches Inventar und Ausrüstung, versionierter Spielstand (localStorage) | Ausgerüstete Items ändern Werte spürbar; Spielstand überlebt Neuladen | L |
 | **5** | Rocinante-Hub | Hub-Szene, Missionswahl, Händler, Ausrüstung, Neues Spiel und Spielstand-Auswahl, Klassenwahl | Der komplette Kreislauf Hub → Mission → Hub funktioniert | M |
 | **6** | Klassen & Talente | Naomi (Drohnen, Hacks), Bobbie (Fernkampf, Rüstung), Holden (Crew-Rufe), Talentbaum-System und -Oberfläche | Alle 4 Klassen sind spielbar und unterscheiden sich deutlich | L |
@@ -19,7 +19,7 @@ Vor jedem Meilenstein werden die zugehörigen offenen Fragen aus `docs/GDD.md` g
 
 ## Querschnittsthemen (laufend)
 
-- **Tests:** Spiellogik in `src/core` ist per Vitest abgedeckt. Ab Meilenstein 3 zusätzlich ein Browser-Rauchtest (Playwright) für Start, Laufen, Angreifen.
+- **Tests:** Spiellogik in `src/core` ist per Vitest abgedeckt (u. a. 600 Seeds auf Lösbarkeit). Ein automatischer Browser-Rauchtest (Playwright) in CI steht noch aus; bisher wurde der Ablauf manuell per Skript im Headless-Browser geprüft.
 - **Hosting:** GitHub Pages über `.github/workflows/pages.yml` (Prüfen bei jedem Push, Deploy vom Default-Branch).
 - **Leistung:** Zielwert 60 fps auf einem mittleren Tablet; Phaser-Chunk bleibt getrennt (Cache-freundlich).
 - **Dokumente pflegen:** Änderungen am Design landen im GDD, Änderungen an Architektur oder Regeln in `CLAUDE.md`.
@@ -40,4 +40,16 @@ Umgesetzt (Details und Zahlen: GDD, Abschnitte 5, 6 und 10):
 - **Testarena:** 5 Wellen, danach Wiederholung mit härteren Gegnern; Wellenzähler im HUD.
 
 Bewusst **nicht** enthalten (kommt später): Talentpunkte (Meilenstein 6), Items und Beute (4), weitere Klassen (6), Elite-Zusatzfähigkeiten, Audio.
+
+## Meilenstein 3: Umfang im Detail
+
+Umgesetzt (Details und Zahlen: GDD, Abschnitt 7):
+- **Dungeon-Generator** (`core/dungeon.ts`): seeded Räume-und-Gänge-Karte, 64×44 Kacheln; Rollen Start, Ausgang, Kampf, Schatz. Ein Test erzeugt 600 Seeds und prüft Erreichbarkeit aller Räume, Gegner, Truhen und einen Pfad zum Ausgang (für Spielfigur und größten Gegner).
+- **Begegnungsplanung** (`core/encounters.ts`) mit Spawn-Tabelle für Akt 1 (`data/spawnTables.ts`): Gruppen nach Tiefe gewichtet, Wächter im Ausgangsraum, Bewacher in Schatzräumen.
+- **Missionsablauf:** Luftschleuse finden, Wächter besiegen, Ausgang betreten, Ergebnisbildschirm (Zeit, Gegner, Truhen, Credits, Erfahrung), Tippen startet die nächste Mission mit neuem Seed.
+- **Truhen** (Credits, manchmal ein Trank), **Nebel des Krieges** mit weichem Rand und Minikarte, Aufgabentext im HUD.
+- Gegner bemerken den Spieler durch Wände erst aus nächster Nähe (sonst brauchen sie Sichtlinie).
+- Testarena bleibt als Übungsmodus erhalten: `?mode=arena`. Feste Karte zum Nachstellen: `?seed=123`.
+
+Bewusst **nicht** enthalten: Items als Beute (Meilenstein 4), Hub und Händler für die Credits (5), Bossräume und Raum-Module (8), Schwerelosigkeits-Zonen (7).
 

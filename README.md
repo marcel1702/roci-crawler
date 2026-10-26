@@ -3,7 +3,7 @@
 Diablo-artiges Action-RPG im Universum von *The Expanse*: privates, nicht-kommerzielles Fanprojekt.
 Läuft als Progressive Web App (Phaser 3 + TypeScript + Vite) auf Smartphone und Tablet.
 
-**Stand: Meilenstein 1** – eine Spielfigur (Amos) läuft per Tippen durch eine Testarena, weicht Wänden per Pfadfindung aus und bekämpft Gegner.
+**Stand: Meilenstein 3** – zufällig erzeugte Dungeon-Missionen mit Nebel, Truhen, Gegnern (Nahkämpfer, Schützen, Elite), Fähigkeiten, Erfahrung und Ausgang.
 Design: [`docs/GDD.md`](docs/GDD.md) · Fahrplan: [`docs/MILESTONES.md`](docs/MILESTONES.md) · Projektregeln: [`CLAUDE.md`](CLAUDE.md)
 
 ## Starten
@@ -22,8 +22,10 @@ diese Adresse im Browser des Tablets öffnen. Rechner und Tablet müssen im selb
 
 - Auf den Boden tippen (oder halten und ziehen): dorthin laufen.
 - Gegner antippen: hinlaufen und angreifen.
-- Die drei Kreise unten rechts sind Platzhalter für Fähigkeiten (ab Meilenstein 2).
+- Die drei Kreise unten rechts sind die Fähigkeiten (Amos: Rammbock, Standhaft, Gnadenloser Schlag), der kleine grüne Kreis ist der Trank.
+- Ziel jeder Mission: Luftschleuse finden, ihre Wächter besiegen, hineingehen. Truhen öffnen sich beim Herangehen.
 - Am Desktop funktioniert die Maus genauso.
+- Zum Ausprobieren: `?seed=123` an die URL hängen lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen.
 
 ## PWA und Installation auf dem Homescreen
 

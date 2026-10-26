@@ -87,6 +87,12 @@ export class Player extends Actor {
     this.repathTimer = 0;
   }
 
+  /** Bricht Laufen und Angreifen ab (z. B. am Missionsende). */
+  cancelCommands(): void {
+    this.setAttackTarget(null);
+    this.follower.clear();
+  }
+
   /** Löst die Fähigkeit auf Taste `index` aus. Liefert true, wenn sie gewirkt hat. */
   useAbility(index: number): boolean {
     const slot = this.abilities[index];

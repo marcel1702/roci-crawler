@@ -40,6 +40,17 @@ export class TileGrid {
     return !this.isSolid(col, row);
   }
 
+  /** Wand, die an mindestens ein begehbares Feld grenzt (auch diagonal). Alle anderen Wände sind unsichtbares "Gestein". */
+  isWallEdge(col: number, row: number): boolean {
+    if (!this.isSolid(col, row)) return false;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if ((dc !== 0 || dr !== 0) && this.inBounds(col + dc, row + dr) && this.isWalkable(col + dc, row + dr)) return true;
+      }
+    }
+    return false;
+  }
+
   toCol(worldX: number): number {
     return Math.floor(worldX / this.tileSize);
   }

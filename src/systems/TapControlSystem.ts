@@ -22,6 +22,8 @@ export class TapControlSystem {
     private readonly player: Player,
     private readonly getEnemies: () => readonly Enemy[],
     private readonly isOverUi: (screenX: number, screenY: number) => boolean,
+    /** True, wenn die Welt keine Befehle annehmen soll (Figur tot, Mission vorbei). */
+    private readonly isLocked: () => boolean,
   ) {
     this.marker = scene.add.image(0, 0, TEXTURE_KEYS.moveMarker).setScale(TEXTURE_SCALE).setDepth(5).setAlpha(0);
 
@@ -34,7 +36,7 @@ export class TapControlSystem {
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
-    if (this.player.isDead || this.activePointerId !== null || this.isOverUi(pointer.x, pointer.y)) return;
+    if (this.isLocked() || this.activePointerId !== null || this.isOverUi(pointer.x, pointer.y)) return;
 
     const world = pointer.positionToCamera(this.scene.cameras.main) as Phaser.Math.Vector2;
     const enemy = this.pickEnemy(world.x, world.y);
@@ -51,7 +53,7 @@ export class TapControlSystem {
 
   private onMove(pointer: Phaser.Input.Pointer): void {
     if (pointer.id !== this.activePointerId || !pointer.isDown || this.dragMode !== 'move') return;
-    if (this.player.isDead || this.scene.time.now - this.lastDragMs < TAP.dragRepathMs) return;
+    if (this.isLocked() || this.scene.time.now - this.lastDragMs < TAP.dragRepathMs) return;
 
     this.lastDragMs = this.scene.time.now;
     const world = pointer.positionToCamera(this.scene.cameras.main) as Phaser.Math.Vector2;

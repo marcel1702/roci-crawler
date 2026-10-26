@@ -17,6 +17,8 @@ const AFTER_STUN_COOLDOWN_MS = 400;
 const MELEE_SLACK = 8;
 const MELEE_HALF_ANGLE = 0.75;
 const RETREAT_MIN_PROGRESS = 0.3;
+/** Bis zu diesem Abstand (Pixel) bemerkt ein Gegner den Spieler auch ohne Sichtlinie. */
+const NOTICE_THROUGH_WALLS = 70;
 
 type EnemyState = 'idle' | 'chase' | 'windup';
 
@@ -103,6 +105,8 @@ export class Enemy extends Actor {
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
     if (this.aiState === 'idle') {
       if (dist > this.def.aggroRange) return;
+      // Durch Wände bemerken Gegner den Spieler erst aus nächster Nähe.
+      if (dist > NOTICE_THROUGH_WALLS && !hasLineOfSight(this.world.grid, this.x, this.y, player.x, player.y)) return;
       this.aiState = 'chase';
     } else if (dist > this.def.leashRange && this.tauntMs <= 0) {
       this.aiState = 'idle';

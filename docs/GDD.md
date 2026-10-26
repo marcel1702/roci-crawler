@@ -93,12 +93,19 @@ Eigene Gegner im Universum; bekannte Hauptfiguren treten höchstens als NPC in D
 
 Gegner bemerken den Spieler ab einer Aggro-Reichweite oder wenn sie getroffen werden und geben bei großer Entfernung auf.
 
-## 7. Dungeons `[Vorgabe: zufallsgeneriert]`, Verfahren `[Vorschlag]`
+## 7. Dungeons `[Vorgabe: zufallsgeneriert]`
 
-- Kachelraster (32 px), Räume und Gänge, **seeded** (gleicher Seed = gleiche Karte, reproduzierbar für Tests und Bugs).
-- Aufbau: Eingang → Räume mit Gegnergruppen und Truhen → Ziel (Ausgang, Objekt bergen oder Boss).
-- Vorgefertigte Module für Bossarenen; pro Akt eigene Farbwelt und Hindernisse.
-- Gegner kommen aus Spawn-Tabellen je Akt und Schwierigkeit; Elite-Gegner mit Zusatzfähigkeit.
+Umgesetzt in Meilenstein 3 `[Umgesetzt]`, alle Zahlen sind Startwerte:
+
+- **Karte:** Kachelraster 64×44 (Kachel 32 px), 8–11 Räume von 6–11 Kacheln, durch 2 Kacheln breite Gänge verbunden (Spannbaum plus wenige Rundwege). **Seeded:** gleicher Seed = gleiche Karte und gleiche Gegnerverteilung.
+- **Räume:** *Start* (gegnerfrei), *Ausgang* (am weitesten vom Start, bewacht), *Schatz* (Sackgasse mit Truhe und zwei Bewachern, höchstens zwei), *Kampf* (Gegnergruppe nach Tiefe, große Räume bekommen einen Gegner mehr, 25 % haben eine Truhe).
+- **Aufgabe der Mission:** Luftschleuse finden → ihre **Wächter** (Brecher + 2 Schützen) besiegen → Schleuse betreten. Dann Ergebnisbildschirm und nächste Mission.
+- **Nebel des Krieges:** Sichtweite 8 Kacheln, Wände blockieren die Sicht, Entdecktes bleibt abgedunkelt sichtbar; **Minikarte** oben rechts mit Spielfigur, Truhen und Schleuse (nach Entdeckung).
+- **Truhen:** öffnen sich beim Herangehen, geben 40–90 Credits und mit 30 % einen zusätzlichen Trank (höchstens 5). Items als Beute folgen mit Meilenstein 4.
+- **Credits** sind die Währung (Händler im Hub, Meilenstein 5).
+- Gegner bemerken den Spieler nur mit Sichtlinie (durch Wände erst aus ca. 70 px).
+- **Später:** vorgefertigte Module für Bossarenen, eigene Farbwelt pro Akt, Elite-Gegner mit Zusatzfähigkeit, Schwerelosigkeits-Räume (Meilenstein 7).
+- **Zum Ausprobieren:** `?seed=123` lädt genau diesen Dungeon, `?mode=arena` die Testarena mit endlosen Wellen.
 
 ## 8. Schwerelosigkeit `[Vorgabe]`, Regeln `[Vorschlag]`
 
